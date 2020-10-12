@@ -14,6 +14,7 @@ private:
 	std::unordered_map<uint64_t, T*> poolUsing;
 	std::vector<T*> poolFree;
 public:
+	~SimplePool();
 	T* CreateObj(uint64_t objId);
 	bool ReleaseObj(uint64_t objId);
 	T* FindObj(uint64_t objId);
@@ -23,6 +24,12 @@ private:
 	void AllocObjs();
 	void FreeObjs();
 };
+
+template<class T>
+inline SimplePool<T>::~SimplePool()
+{
+	Destroy();
+}
 
 template<class T>
 inline T* SimplePool<T>::CreateObj(uint64_t objId)
