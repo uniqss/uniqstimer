@@ -4,7 +4,9 @@
 #include <stdlib.h>
 #include<chrono>
 
-int64_t UTimerGetCurrentTimeMS(void)
+#include "impl/timernode.h"
+
+uint64_t UTimerGetCurrentTimeMS(void)
 {
 	auto time_now = std::chrono::system_clock::now();
 	auto duration_in_ms = std::chrono::duration_cast<std::chrono::milliseconds>(time_now.time_since_epoch());
@@ -54,23 +56,24 @@ static void InitArrayListTimer(ListTimer* arrListTimer, TimerMsType nSize)
 	}
 }
 
+// 内存统一由池管理
 static void DeleteArrayListTimer(ListTimer* arrListTimer, TimerMsType uSize)
 {
-	ListTimer listTmr, * pListTimer;
-	TimerNode* pTmr;
-	TimerMsType idx;
+	//ListTimer listTmr, * pListTimer;
+	//TimerNode* pTmr;
+	//TimerMsType idx;
 
-	for (idx = 0; idx < uSize; idx++)
-	{
-		ListTimerReplaceInit(&arrListTimer[idx], &listTmr);
-		pListTimer = listTmr.pNext;
-		while (pListTimer != &listTmr)
-		{
-			pTmr = (TimerNode*)((uint8_t*)pListTimer - offsetof(TimerNode, ltTimer));
-			pListTimer = pListTimer->pNext;
-			free(pTmr);
-		}
-	}
+	//for (idx = 0; idx < uSize; idx++)
+	//{
+	//	ListTimerReplaceInit(&arrListTimer[idx], &listTmr);
+	//	pListTimer = listTmr.pNext;
+	//	while (pListTimer != &listTmr)
+	//	{
+	//		pTmr = (TimerNode*)((uint8_t*)pListTimer - offsetof(TimerNode, ltTimer));
+	//		pListTimer = pListTimer->pNext;
+	//		delete pTmr;
+	//	}
+	//}
 }
 
 static void AddTimer(TimerManager* lpTimerManager, TimerNode* pTmr)
@@ -141,15 +144,15 @@ static TimerMsType CascadeTimer(TimerManager* lpTimerManager, ListTimer* arrList
 static void RunTimer(TimerManager* lpTimerManager)
 {
 #define INDEX(N) ((lpTimerManager->currentTimeMS >> (TVR_BITS + (N) * TVN_BITS)) & TVN_MASK)
-	TimerMsType idx, uJiffies;
+	TimerMsType idx, timeMS;
 	ListTimer listTmrExpire, * pListTmrExpire;
 	TimerNode* pTmr;
 
 	if (NULL == lpTimerManager)
 		return;
-	uJiffies = UTimerGetCurrentTimeMS();
+	timeMS = UTimerGetCurrentTimeMS();
 	lpTimerManager->lock.lock();
-	while (TIME_AFTER_EQ(uJiffies, lpTimerManager->currentTimeMS))
+	while (TIME_AFTER_EQ(timeMS, lpTimerManager->currentTimeMS))
 	{
 		idx = lpTimerManager->currentTimeMS & TVR_MASK;
 		if (!idx &&
@@ -174,7 +177,10 @@ static void RunTimer(TimerManager* lpTimerManager)
 				pTmr->uExpires = lpTimerManager->currentTimeMS + pTmr->uPeriod;
 				AddTimer(lpTimerManager, pTmr);
 			}
-			else free(pTmr);
+			else
+			{
+				delete pTmr;
+			}
 		}
 		lpTimerManager->currentTimeMS++;
 	}
@@ -198,21 +204,29 @@ static void* ThreadRunTimer(void* pParam)
 	return NULL;
 }
 
-TimerManager* CreateTimerManager(void)
+TimerManager* CreateTimerManager(bool internalThraed)
 {
 	TimerManager* lpTimerMgr = new TimerManager();
 	if (lpTimerMgr != NULL)
 	{
-		lpTimerMgr->threadWorking = true;
-		lpTimerMgr->currentTimeMS = UTimerGetCurrentTimeMS();
+		if (internalThraed)
+		{
+			lpTimerMgr->internalThread = internalThraed;
+			lpTimerMgr->threadWorking = true;
+			lpTimerMgr->currentTimeMS = UTimerGetCurrentTimeMS();
+		}
 		InitArrayListTimer(lpTimerMgr->arrListTimer1, sizeof(lpTimerMgr->arrListTimer1) / sizeof(lpTimerMgr->arrListTimer1[0]));
 		InitArrayListTimer(lpTimerMgr->arrListTimer2, sizeof(lpTimerMgr->arrListTimer2) / sizeof(lpTimerMgr->arrListTimer2[0]));
 		InitArrayListTimer(lpTimerMgr->arrListTimer3, sizeof(lpTimerMgr->arrListTimer3) / sizeof(lpTimerMgr->arrListTimer3[0]));
 		InitArrayListTimer(lpTimerMgr->arrListTimer4, sizeof(lpTimerMgr->arrListTimer4) / sizeof(lpTimerMgr->arrListTimer4[0]));
 		InitArrayListTimer(lpTimerMgr->arrListTimer5, sizeof(lpTimerMgr->arrListTimer5) / sizeof(lpTimerMgr->arrListTimer5[0]));
 		InitArrayListTimer(lpTimerMgr->arrListTimer6, sizeof(lpTimerMgr->arrListTimer6) / sizeof(lpTimerMgr->arrListTimer6[0]));
-		lpTimerMgr->threadWaitingTerminateOK = false;
-		lpTimerMgr->thread = std::move(new std::thread(ThreadRunTimer, lpTimerMgr));
+
+		if (internalThraed)
+		{
+			lpTimerMgr->threadWaitingTerminateOK = false;
+			lpTimerMgr->thread = std::move(new std::thread(ThreadRunTimer, lpTimerMgr));
+		}
 	}
 	return lpTimerMgr;
 }
@@ -221,10 +235,13 @@ void DestroyTimerManager(TimerManager* lpTimerManager)
 {
 	if (NULL == lpTimerManager)
 		return;
-	lpTimerManager->threadWorking = false;
-	while (!lpTimerManager->threadWaitingTerminateOK)
+	if (lpTimerManager->internalThread)
 	{
-		std::this_thread::sleep_for(std::chrono::milliseconds(1));
+		lpTimerManager->threadWorking = false;
+		while (!lpTimerManager->threadWaitingTerminateOK)
+		{
+			std::this_thread::sleep_for(std::chrono::milliseconds(1));
+		}
 	}
 	DeleteArrayListTimer(lpTimerManager->arrListTimer1, sizeof(lpTimerManager->arrListTimer1) / sizeof(lpTimerManager->arrListTimer1[0]));
 	DeleteArrayListTimer(lpTimerManager->arrListTimer2, sizeof(lpTimerManager->arrListTimer2) / sizeof(lpTimerManager->arrListTimer2[0]));
@@ -232,47 +249,64 @@ void DestroyTimerManager(TimerManager* lpTimerManager)
 	DeleteArrayListTimer(lpTimerManager->arrListTimer4, sizeof(lpTimerManager->arrListTimer4) / sizeof(lpTimerManager->arrListTimer4[0]));
 	DeleteArrayListTimer(lpTimerManager->arrListTimer5, sizeof(lpTimerManager->arrListTimer5) / sizeof(lpTimerManager->arrListTimer5[0]));
 	DeleteArrayListTimer(lpTimerManager->arrListTimer6, sizeof(lpTimerManager->arrListTimer6) / sizeof(lpTimerManager->arrListTimer6[0]));
-	free(lpTimerManager);
+
+	lpTimerManager->timerPool.Destroy();
+
+	delete lpTimerManager;
 }
 
-// 创建一个定时器  uDueTime 首次触发的超时时间间隔  uPeriod 定时器循环周期，若为0，则该定时器只运行一次
-TimerNode* CreateTimer(TimerManager* lpTimerManager, void (*timerFn)(void*), void* pParam, TimerMsType uDueTime, TimerMsType uPeriod)
+bool CreateTimer(TimerIdType timerId, TimerManager* lpTimerManager, void (*timerFn)(void*), void* pParam, TimerMsType uDueTime, TimerMsType uPeriod)
 {
-	TimerNode* pTmr = NULL;
+	TimerNode* pTimer = NULL;
 	if (NULL == timerFn || NULL == lpTimerManager)
-		return NULL;
-	pTmr = new TimerNode();
-	if (pTmr != NULL)
+		return false;
+	if (lpTimerManager->internalThread)
 	{
-		pTmr->uPeriod = uPeriod;
-		pTmr->timerFn = timerFn;
-		pTmr->pParam = pParam;
-
-
 		lpTimerManager->lock.lock();
-		pTmr->uExpires = lpTimerManager->currentTimeMS + uDueTime;
-		AddTimer(lpTimerManager, pTmr);
+	}
+	pTimer = lpTimerManager->timerPool.CreateObj(timerId);
+	if (pTimer != NULL)
+	{
+		pTimer->uPeriod = uPeriod;
+		pTimer->timerFn = timerFn;
+		pTimer->pParam = pParam;
+
+		pTimer->uExpires = lpTimerManager->currentTimeMS + uDueTime;
+		AddTimer(lpTimerManager, pTimer);
+	}
+	if (lpTimerManager->internalThread)
+	{
 		lpTimerManager->lock.unlock();
 	}
-	return pTmr;
+	return true;
 }
 
-//删除定时器
-int32_t DeleteTimer(TimerManager* lpTimerManager, TimerNode* lpTimer)
+
+bool KillTimer(TimerManager* lpTimerManager, TimerIdType timerId)
 {
 	ListTimer* pListTmr;
-	if (NULL != lpTimerManager && NULL != lpTimer)
+	if (NULL != lpTimerManager && timerId != 0)
 	{
-		lpTimerManager->lock.lock();
-		pListTmr = &lpTimer->ltTimer;
-		pListTmr->pPrev->pNext = pListTmr->pNext;
-		pListTmr->pNext->pPrev = pListTmr->pPrev;
-		free(lpTimer);
-		lpTimerManager->lock.unlock();
-		return 0;
+		if (lpTimerManager->internalThread)
+		{
+			lpTimerManager->lock.lock();
+		}
+		auto lpTimer = lpTimerManager->timerPool.FindObj(timerId);
+		if (lpTimer != nullptr)
+		{
+			pListTmr = &lpTimer->ltTimer;
+			pListTmr->pPrev->pNext = pListTmr->pNext;
+			pListTmr->pNext->pPrev = pListTmr->pPrev;
+			lpTimerManager->timerPool.ReleaseObj(timerId);
+		}
+		if (lpTimerManager->internalThread)
+		{
+			lpTimerManager->lock.unlock();
+		}
+		return true;
 	}
 	else
 	{
-		return -1;
+		return false;
 	}
 }

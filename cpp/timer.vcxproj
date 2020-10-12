@@ -200,7 +200,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="impl\timernode.h" />
+    <ClInclude Include="impl\simplepool.h" />
     <ClInclude Include="timer.h" />
+    <ClInclude Include="timer_def.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />

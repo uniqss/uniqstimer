@@ -13,9 +13,21 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="impl">
+      <UniqueIdentifier>{33ac14e6-5099-4e76-a2a5-ea5e4b8f3f52}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="timer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="impl\timernode.h">
+      <Filter>impl</Filter>
+    </ClInclude>
+    <ClInclude Include="impl\simplepool.h">
+      <Filter>impl</Filter>
+    </ClInclude>
+    <ClInclude Include="timer_def.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
