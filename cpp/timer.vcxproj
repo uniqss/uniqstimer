@@ -200,12 +200,18 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="def.h" />
     <ClInclude Include="impl\timernode.h" />
     <ClInclude Include="impl\simplepool.h" />
+    <ClInclude Include="OnMsg.h" />
+    <ClInclude Include="simplemessagequeue.h" />
     <ClInclude Include="timer.h" />
     <ClInclude Include="timer_def.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="main_fulltestcase.cpp" />
+    <ClCompile Include="OnMsg.cpp" />
+    <ClCompile Include="simplemessagequeue.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="timer.cpp" />
   </ItemGroup>

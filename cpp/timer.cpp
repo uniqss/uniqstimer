@@ -146,13 +146,13 @@ static void RunTimer(TimerManager* lpTimerManager)
 #define INDEX(N) ((lpTimerManager->currentTimeMS >> (TVR_BITS + (N) * TVN_BITS)) & TVN_MASK)
 	TimerMsType idx, timeMS;
 	ListTimer listTmrExpire, * pListTmrExpire;
-	TimerNode* pTmr;
+	TimerNode* pTimer;
 
 	if (NULL == lpTimerManager)
 		return;
 	timeMS = UTimerGetCurrentTimeMS();
 	lpTimerManager->lock.lock();
-	while (TIME_AFTER_EQ(timeMS, lpTimerManager->currentTimeMS))
+	while (timeMS >= lpTimerManager->currentTimeMS)
 	{
 		idx = lpTimerManager->currentTimeMS & TVR_MASK;
 		if (!idx &&
@@ -169,18 +169,28 @@ static void RunTimer(TimerManager* lpTimerManager)
 		pListTmrExpire = pListTmrExpire->pNext;
 		while (pListTmrExpire != &listTmrExpire)
 		{
-			pTmr = (TimerNode*)((uint8_t*)pListTmrExpire - offsetof(TimerNode, ltTimer));
+			pTimer = (TimerNode*)((uint8_t*)pListTmrExpire - offsetof(TimerNode, ltTimer));
 			pListTmrExpire = pListTmrExpire->pNext;
-			pTmr->timerFn(pTmr->pParam);
-			if (pTmr->uPeriod != 0)
+			pTimer->timerFn(pTimer->id, pTimer->pParam);
+			if (pTimer->state == ETimerStateRunning && pTimer->FrameKilled)
 			{
-				pTmr->uExpires = lpTimerManager->currentTimeMS + pTmr->uPeriod;
-				AddTimer(lpTimerManager, pTmr);
+				pTimer->FrameKilled = false;
+				continue;
 			}
-			else
+			if (pTimer->state == ETimerStateKilled)
 			{
-				delete pTmr;
+				lpTimerManager->pendingReleaseTimers.insert(pTimer->id);
 			}
+			else if (pTimer->uPeriod != 0)
+			{
+				pTimer->uExpires = lpTimerManager->currentTimeMS + pTimer->uPeriod;
+				AddTimer(lpTimerManager, pTimer);
+			}
+			pTimer->FrameKilled = false;
+		}
+		for (auto it : lpTimerManager->pendingReleaseTimers)
+		{
+			lpTimerManager->timerPool.ReleaseObj(it);
 		}
 		lpTimerManager->currentTimeMS++;
 	}
@@ -255,7 +265,7 @@ void DestroyTimerManager(TimerManager* lpTimerManager)
 	delete lpTimerManager;
 }
 
-bool CreateTimer(TimerIdType timerId, TimerManager* lpTimerManager, void (*timerFn)(void*), void* pParam, TimerMsType uDueTime, TimerMsType uPeriod)
+bool CreateTimer(TimerIdType timerId, TimerManager* lpTimerManager, void (*timerFn)(TimerIdType, void*), void* pParam, TimerMsType uDueTime, TimerMsType uPeriod)
 {
 	TimerNode* pTimer = NULL;
 	if (NULL == timerFn || NULL == lpTimerManager)
@@ -270,6 +280,7 @@ bool CreateTimer(TimerIdType timerId, TimerManager* lpTimerManager, void (*timer
 		pTimer->uPeriod = uPeriod;
 		pTimer->timerFn = timerFn;
 		pTimer->pParam = pParam;
+		pTimer->state = ETimerStateRunning;
 
 		pTimer->uExpires = lpTimerManager->currentTimeMS + uDueTime;
 		AddTimer(lpTimerManager, pTimer);
@@ -291,13 +302,15 @@ bool KillTimer(TimerManager* lpTimerManager, TimerIdType timerId)
 		{
 			lpTimerManager->lock.lock();
 		}
-		auto lpTimer = lpTimerManager->timerPool.FindObj(timerId);
-		if (lpTimer != nullptr)
+		auto pTimer = lpTimerManager->timerPool.FindObj(timerId);
+		if (pTimer != nullptr)
 		{
-			pListTmr = &lpTimer->ltTimer;
+			pListTmr = &pTimer->ltTimer;
 			pListTmr->pPrev->pNext = pListTmr->pNext;
 			pListTmr->pNext->pPrev = pListTmr->pPrev;
-			lpTimerManager->timerPool.ReleaseObj(timerId);
+			pTimer->state = ETimerStateKilled;
+			pTimer->FrameKilled = true;
+			lpTimerManager->pendingReleaseTimers.insert(timerId);
 		}
 		if (lpTimerManager->internalThread)
 		{

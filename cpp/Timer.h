@@ -4,6 +4,7 @@
 #include <thread>
 #include<atomic>
 #include<stdint.h>
+#include<unordered_set>
 
 #include "impl/simplepool.h"
 #include "impl/timernode.h"
@@ -25,6 +26,8 @@ public:
 	ListTimer arrListTimer4[TVN_SIZE];
 	ListTimer arrListTimer5[TVN_SIZE];
 	ListTimer arrListTimer6[TVN_SIZE];
+
+	std::unordered_set<TimerIdType> pendingReleaseTimers;
 	
 	SimplePool<TimerNode> timerPool;
 };
@@ -35,7 +38,7 @@ TimerManager* CreateTimerManager(bool internalThraed);
 
 void DestroyTimerManager(TimerManager* lpTimerManager);
 
-bool CreateTimer(TimerIdType timerId, TimerManager* lpTimerManager, void (*timerFn)(void*), void* pParam, TimerMsType uDueTime, TimerMsType uPeriod);
+bool CreateTimer(TimerIdType timerId, TimerManager* lpTimerManager, void (*timerFn)(TimerIdType, void*), void* pParam, TimerMsType uDueTime, TimerMsType uPeriod);
 
 bool KillTimer(TimerManager* lpTimerManager, TimerIdType timerId);
 

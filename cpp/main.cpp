@@ -3,14 +3,43 @@
 #include<iostream>
 #include<random>
 
-void OnTimer(void* pParam)
+#include "simplemessagequeue.h"
+#include "OnMsg.h"
+
+TimerManager* pMgr;
+SimpleMessageQueue g_MsgQueue;
+
+
+void OnTimerKill(TimerIdType timerId, void* pParam)
 {
 	const char* pszStr = (const char*)pParam;
 	auto currMS = UTimerGetCurrentTimeMS();
-	//auto ms = currMS % 1000;
-	//auto s = currMS / 1000;
-	//printf("OnTimer. s:%llu ms:%llu str: %s\n", s, ms, pszStr);
+	auto ms = currMS % 1000;
+	auto s = currMS / 1000;
+	printf("%s. s:%llu ms:%llu str: %s\n", __FUNCTION__, s, ms, pszStr);
+	bool bOk = false;
+	bOk = KillTimer(pMgr, timerId);
+	if (!bOk) printf("KillTimer failed. %d", __LINE__);
 }
+
+std::atomic<bool> MainThreadWorking = true;
+
+
+void ExitThread()
+{
+	std::string input = "";
+	while (true)
+	{
+		std::cin >> input;
+		if (input == "exit" || input == "e")
+		{
+			break;
+		}
+	}
+	MainThreadWorking = false;
+}
+
+extern void main_fulltestcase();
 
 #define TIMERCOUNT 1000000
 #define RANDTIMERCOUNT 100000
@@ -21,9 +50,26 @@ int main(void)
 	auto s = currMS / 1000;
 	printf("main start. s:%llu ms:%llu \n", s, ms);
 
-	TimerManager* pMgr;
+	MainStartMS = currMS;
+
 	pMgr = CreateTimerManager(true);
 	bool bOk = false;
+
+	main_fulltestcase();
+
+#if 0
+	bOk = CreateTimer(TimerIdType(10100), pMgr, OnTimer, (void*)"test kill timer and set timer on callback", 100, 1000);
+	if (!bOk) printf("CreateTimer failed. %d", __LINE__);
+
+	bOk = CreateTimer(TimerIdType(10200), pMgr, OnTimer, (void*)"test kill timer and set timer on callback", 300, 0);
+	if (!bOk) printf("CreateTimer failed. %d", __LINE__);
+
+	bOk = CreateTimer(TimerIdType(20300), pMgr, OnTimer, (void*)"test kill timer and set timer on callback", 500, 2000);
+	if (!bOk) printf("CreateTimer failed. %d", __LINE__);
+
+	bOk = CreateTimer(TimerIdType(20400), pMgr, OnTimer, (void*)"test kill timer and set timer on callback", 800, 0);
+	if (!bOk) printf("CreateTimer failed. %d", __LINE__);
+#endif
 
 #if 0
 	for (TimerIdType i = 1; i < TIMERCOUNT; i++)
@@ -38,7 +84,7 @@ int main(void)
 	if (!bOk) printf("CreateTimer failed. %d", __LINE__);
 #endif
 
-#if 1
+#if 0
 	srand(UTimerGetCurrentTimeMS());
 	for (auto i = 0; i < RANDTIMERCOUNT; i++)
 	{
@@ -49,15 +95,18 @@ int main(void)
 	}
 #endif
 
-	std::string input = "";
-	while (true)
+	std::thread e(ExitThread);
+	e.detach();
+
+	while (MainThreadWorking)
 	{
-		std::cin >> input;
-		if (input == "exit" || input == "e")
+		SimpleMessage msg;
+		while (g_MsgQueue.PopMessage(msg))
 		{
-			break;
+			OnMsg(msg.msgId, msg.msg);
 		}
-	}
+		std::this_thread::sleep_for(std::chrono::milliseconds(1));
+}
 
 #if 0
 	for (TimerIdType i = 1; i < TIMERCOUNT; i++)
@@ -67,7 +116,7 @@ int main(void)
 	}
 #endif
 
-#if 1
+#if 0
 	for (auto i = 1; i < RANDTIMERCOUNT; i++)
 	{
 		bOk = KillTimer(pMgr, TimerIdType(i));
@@ -75,6 +124,7 @@ int main(void)
 	}
 #endif
 
+#if 0
 	bOk = KillTimer(pMgr, TimerIdType(1));
 	if (!bOk) printf("CreateTimer failed. %d", __LINE__);
 
@@ -83,6 +133,7 @@ int main(void)
 
 	bOk = KillTimer(pMgr, TimerIdType(10000));
 	if (!bOk) printf("CreateTimer failed. %d", __LINE__);
+#endif
 
 	DestroyTimerManager(pMgr);
 	return 0;
