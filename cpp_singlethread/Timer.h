@@ -23,7 +23,7 @@ public:
 
 uint64_t UTimerGetCurrentTimeMS(void);
 
-TimerManager* CreateTimerManager(bool internalThraed);
+TimerManager* CreateTimerManager();
 
 void DestroyTimerManager(TimerManager* pTimerManager);
 

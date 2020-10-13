@@ -121,7 +121,7 @@ static TimerMsType CascadeTimer(TimerManager* pTimerManager, ListTimer* arrListT
 	return idx;
 }
 
-TimerManager* CreateTimerManager(bool internalThraed)
+TimerManager* CreateTimerManager()
 {
 	TimerManager* lpTimerMgr = new TimerManager();
 	if (lpTimerMgr != NULL)

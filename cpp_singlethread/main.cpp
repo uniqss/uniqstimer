@@ -8,15 +8,20 @@ TimerManager* pMgr;
 
 void OnTimer(TimerIdType timerId, void* pParam)
 {
+	bool bOk = false;
+
 	const char* pszStr = (const char*)pParam;
 	auto currMS = UTimerGetCurrentTimeMS();
 	auto ms = currMS % 1000;
 	auto s = currMS / 1000;
 	printf("OnTimer. s:%llu ms:%llu timerId:%llu str: %s\n", s, ms, timerId, pszStr);
 	auto randKill = rand() % 100;
-	if (randKill < 10)
+	if (randKill < 80)
 	{
+		printf("OnTimer KillTimer timerId:%llu\n", timerId);
 		KillTimer(pMgr, timerId);
+		bOk = CreateTimer(timerId, pMgr, OnTimer, (void*)"OnTimer kill timer and create timer. 1000, 1000 ", 1000, 1000);
+		if (!bOk) printf("CreateTimer failed. %d\n", __LINE__);
 	}
 }
 
@@ -28,7 +33,7 @@ bool bTerminateOK = false;
 
 void LogicThread()
 {
-	pMgr = CreateTimerManager(true);
+	pMgr = CreateTimerManager();
 
 	auto currMS = UTimerGetCurrentTimeMS();
 	auto ms = currMS % 1000;
@@ -79,7 +84,7 @@ int main(void)
 {
 	bool bOk = false;
 
-	srand(UTimerGetCurrentTimeMS());
+	srand((unsigned)UTimerGetCurrentTimeMS());
 
 #if 0
 	for (TimerIdType i = 1; i < TIMERCOUNT; i++)
