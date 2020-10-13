@@ -93,35 +93,35 @@ static void AddTimer(TimerManager* pTimerManager, TimerNode* pTimer)
 
 static TimerMsType CascadeTimer(TimerManager* pTimerManager, ListTimer* arrListTimer, TimerMsType idx)
 {
-	ListTimer listTmr, * pListTimer;
-	TimerNode* pTmr;
+	ListTimer listTimer, * pListTimer;
+	TimerNode* pTimerNode;
 
-	ListTimerReplaceInit(&arrListTimer[idx], &listTmr);
-	pListTimer = listTmr.pNext;
-	while (pListTimer != &listTmr)
+	ListTimerReplaceInit(&arrListTimer[idx], &listTimer);
+	pListTimer = listTimer.pNext;
+	while (pListTimer != &listTimer)
 	{
-		pTmr = (TimerNode*)((uint8_t*)pListTimer - offsetof(TimerNode, listTimer));
+		pTimerNode = (TimerNode*)((uint8_t*)pListTimer - offsetof(TimerNode, listTimer));
 		pListTimer = pListTimer->pNext;
-		AddTimer(pTimerManager, pTmr);
+		AddTimer(pTimerManager, pTimerNode);
 	}
 	return idx;
 }
 
 TimerManager* CreateTimerManager()
 {
-	TimerManager* lpTimerMgr = new TimerManager();
-	if (lpTimerMgr != NULL)
+	TimerManager* pTimerMgr = new TimerManager();
+	if (pTimerMgr != NULL)
 	{
-		lpTimerMgr->currentTimeMS = UTimerGetCurrentTimeMS();
-		InitArrayListTimer(lpTimerMgr->arrListTimer1, sizeof(lpTimerMgr->arrListTimer1) / sizeof(lpTimerMgr->arrListTimer1[0]));
-		InitArrayListTimer(lpTimerMgr->arrListTimer2, sizeof(lpTimerMgr->arrListTimer2) / sizeof(lpTimerMgr->arrListTimer2[0]));
-		InitArrayListTimer(lpTimerMgr->arrListTimer3, sizeof(lpTimerMgr->arrListTimer3) / sizeof(lpTimerMgr->arrListTimer3[0]));
-		InitArrayListTimer(lpTimerMgr->arrListTimer4, sizeof(lpTimerMgr->arrListTimer4) / sizeof(lpTimerMgr->arrListTimer4[0]));
-		InitArrayListTimer(lpTimerMgr->arrListTimer5, sizeof(lpTimerMgr->arrListTimer5) / sizeof(lpTimerMgr->arrListTimer5[0]));
-		InitArrayListTimer(lpTimerMgr->arrListTimer6, sizeof(lpTimerMgr->arrListTimer6) / sizeof(lpTimerMgr->arrListTimer6[0]));
+		pTimerMgr->currentTimeMS = UTimerGetCurrentTimeMS();
+		InitArrayListTimer(pTimerMgr->arrListTimer1, sizeof(pTimerMgr->arrListTimer1) / sizeof(pTimerMgr->arrListTimer1[0]));
+		InitArrayListTimer(pTimerMgr->arrListTimer2, sizeof(pTimerMgr->arrListTimer2) / sizeof(pTimerMgr->arrListTimer2[0]));
+		InitArrayListTimer(pTimerMgr->arrListTimer3, sizeof(pTimerMgr->arrListTimer3) / sizeof(pTimerMgr->arrListTimer3[0]));
+		InitArrayListTimer(pTimerMgr->arrListTimer4, sizeof(pTimerMgr->arrListTimer4) / sizeof(pTimerMgr->arrListTimer4[0]));
+		InitArrayListTimer(pTimerMgr->arrListTimer5, sizeof(pTimerMgr->arrListTimer5) / sizeof(pTimerMgr->arrListTimer5[0]));
+		InitArrayListTimer(pTimerMgr->arrListTimer6, sizeof(pTimerMgr->arrListTimer6) / sizeof(pTimerMgr->arrListTimer6[0]));
 
 	}
-	return lpTimerMgr;
+	return pTimerMgr;
 }
 
 void DestroyTimerManager(TimerManager* pTimerManager)
@@ -134,7 +134,7 @@ void DestroyTimerManager(TimerManager* pTimerManager)
 	delete pTimerManager;
 }
 
-bool CreateTimer(TimerIdType timerId, TimerManager* pTimerManager, void (*OnTimer)(TimerIdType, void*), void* pParam, TimerMsType uDueTime, TimerMsType uPeriod)
+bool CreateTimer(TimerIdType timerId, TimerManager* pTimerManager, void (*OnTimer)(TimerIdType, void*), void* pParam, TimerMsType dueTimeMS, TimerMsType periodMS)
 {
 	TimerNode* pTimer = NULL;
 	if (NULL == OnTimer || NULL == pTimerManager)
@@ -142,13 +142,13 @@ bool CreateTimer(TimerIdType timerId, TimerManager* pTimerManager, void (*OnTime
 	pTimer = pTimerManager->timerPool.CreateObj(timerId);
 	if (pTimer != NULL)
 	{
-		pTimer->periodMS = uPeriod;
+		pTimer->periodMS = periodMS;
 		pTimer->OnTimer = OnTimer;
 		pTimer->pParam = pParam;
 
 		pTimer->thisFrameKilled = false;
 
-		pTimer->expireMS = pTimerManager->currentTimeMS + uDueTime;
+		pTimer->expireMS = pTimerManager->currentTimeMS + dueTimeMS;
 
 		AddTimer(pTimerManager, pTimer);
 	}

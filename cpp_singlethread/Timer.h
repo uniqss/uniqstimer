@@ -27,7 +27,7 @@ TimerManager* CreateTimerManager();
 
 void DestroyTimerManager(TimerManager* pTimerManager);
 
-bool CreateTimer(TimerIdType timerId, TimerManager* pTimerManager, void (*OnTimer)(TimerIdType, void*), void* pParam, TimerMsType uDueTime, TimerMsType uPeriod);
+bool CreateTimer(TimerIdType timerId, TimerManager* pTimerManager, void (*OnTimer)(TimerIdType, void*), void* pParam, TimerMsType dueTimeMS, TimerMsType periodMS);
 
 bool KillTimer(TimerManager* pTimerManager, TimerIdType timerId);
 
