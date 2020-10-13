@@ -21,27 +21,13 @@ static void ListTimerInsert(ListTimer* pNew, ListTimer* pPrev, ListTimer* pNext)
 	pPrev->pNext = pNew;
 }
 
-static void ListTimerInsertHead(ListTimer* pNew, ListTimer* pHead)
-{
-	ListTimerInsert(pNew, pHead, pHead->pNext);
-}
-
-static void ListTimerInsertTail(ListTimer* pNew, ListTimer* pHead)
-{
-	ListTimerInsert(pNew, pHead->pPrev, pHead);
-}
-
-static void ListTimerReplace(ListTimer* pOld, ListTimer* pNew)
+static void ListTimerReplaceInit(ListTimer* pOld, ListTimer* pNew)
 {
 	pNew->pNext = pOld->pNext;
 	pNew->pNext->pPrev = pNew;
 	pNew->pPrev = pOld->pPrev;
 	pNew->pPrev->pNext = pNew;
-}
 
-static void ListTimerReplaceInit(ListTimer* pOld, ListTimer* pNew)
-{
-	ListTimerReplace(pOld, pNew);
 	pOld->pNext = pOld;
 	pOld->pPrev = pOld;
 }
@@ -102,7 +88,7 @@ static void AddTimer(TimerManager* pTimerManager, TimerNode* pTimer)
 		i = (uExpires >> (TVR_BITS + 4 * TVN_BITS)) & TVN_MASK;
 		pHead = &pTimerManager->arrListTimer5[i];
 	}
-	ListTimerInsertTail(&pTimer->listTimer, pHead);
+	ListTimerInsert(&pTimer->listTimer, pHead->pPrev, pHead);
 }
 
 static TimerMsType CascadeTimer(TimerManager* pTimerManager, ListTimer* arrListTimer, TimerMsType idx)
