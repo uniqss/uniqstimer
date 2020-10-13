@@ -3,8 +3,11 @@
 #include<iostream>
 #include<random>
 #include<thread>
+#include<atomic>
 
 TimerManager* pMgr;
+
+std::atomic<int> timerCount = 1;
 
 void OnTimer(TimerIdType timerId, void* pParam)
 {
@@ -15,6 +18,7 @@ void OnTimer(TimerIdType timerId, void* pParam)
 	auto ms = currMS % 1000;
 	auto s = currMS / 1000;
 	printf("OnTimer. s:%llu ms:%llu timerId:%llu str: %s\n", s, ms, timerId, pszStr);
+#if 0
 	auto randKill = rand() % 100;
 	if (randKill < 80)
 	{
@@ -22,6 +26,36 @@ void OnTimer(TimerIdType timerId, void* pParam)
 		KillTimer(pMgr, timerId);
 		bOk = CreateTimer(timerId, pMgr, OnTimer, (void*)"OnTimer kill timer and create timer. 1000, 1000 ", 1000, 1000);
 		if (!bOk) printf("CreateTimer failed. %d\n", __LINE__);
+	}
+#endif
+	if (timerId == 1)
+	{
+		if (timerCount < 1000)
+		{
+			for (size_t i = 0; i < 10; i++)
+			{
+				TimerIdType randId = TimerIdType(rand());
+				TimerMsType firstMs = TimerMsType(rand() % 1000);
+				bOk = CreateTimer(randId, pMgr, OnTimer, (void*)"OnTimer kill timer and create timer. 1000, 1000 ", firstMs, 1000);
+				if (!bOk) printf("CreateTimer failed. %d\n", __LINE__);
+				++timerCount;
+			}
+		}
+	}
+	else
+	{
+		auto randKill = rand() % 1000;
+		if (randKill < 500)
+		{
+			//printf("OnTimer KillTimer timerId:%llu\n", timerId);
+			KillTimer(pMgr, timerId);
+			auto randCreate = rand() % 1000;
+			if (randCreate < 500)
+			{
+				bOk = CreateTimer(timerId, pMgr, OnTimer, (void*)"OnTimer kill timer and create timer. 1000, 1000 ", 1000, 1000);
+				if (!bOk) printf("CreateTimer failed. %d\n", __LINE__);
+			}
+		}
 	}
 }
 
@@ -43,6 +77,10 @@ void LogicThread()
 	bool bOk = false;
 
 #if 1
+	bOk = CreateTimer(TimerIdType(1), pMgr, OnTimer, (void*)"this is first 200 ms then 200 ms repeated timer", 200, 200);
+	if (!bOk) printf("CreateTimer failed. %d", __LINE__);
+#endif
+#if 0
 	bOk = CreateTimer(TimerIdType(1), pMgr, OnTimer, (void*)"this is first 200 ms then 200 ms repeated timer", 200, 200);
 	if (!bOk) printf("CreateTimer failed. %d", __LINE__);
 
