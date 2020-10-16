@@ -47,6 +47,13 @@ public:
 	void (*timerFn)(TimerIdType, void*);
 	void* pParam;
 	int state;
+	// for debug
+	TimerMsType qwCreateTime;
+	TimerMsType qwLastTriggerTime;
+	TimerMsType qwKillTime;
+	int triggeredCount;
+	int runAddCount;
+	TimerMsType qwReuseTime;
 };
 
 class TimerManager

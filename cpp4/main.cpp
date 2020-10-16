@@ -126,7 +126,7 @@ void OnTimer(TimerIdType timerId, void* pParam)
 	}
 #endif
 #if 1
-	if (timerId >= 1000001 && timerId < 1000100)
+	if (timerId >= 1000001 && timerId <= 1000100)
 	{
 		// kill create rand
 		auto randTimerIdIdx = (rand() % timerIdRandCount);
@@ -238,6 +238,11 @@ void OnTimer(TimerIdType timerId, void* pParam)
 		if (diff > 100)
 		{
 			throw std::logic_error("timer time check error");
+		}
+
+		if (!rInfo.isRepeate)
+		{
+			rInfo.state = 0;
 		}
 	}
 #endif

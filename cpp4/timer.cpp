@@ -293,6 +293,8 @@ void TimerManager::Run()
 			printf("TimerManager::Run pre timerFn timerId:%llu slotTimerListIdx:%d state:%d\n", pTimer->qwTimerId, slotTimerListIdx, pTimer->state);
 #endif
 			pTimer->timerFn(pTimer->qwTimerId, pTimer->pParam);
+			pTimer->qwLastTriggerTime = currTimeMS;
+			pTimer->triggeredCount++;
 #ifdef UNIQS_DEBUG_TIMER
 			printf("TimerManager::Run post timerFn timerId:%llu slotTimerListIdx:%d state:%d\n", pTimer->qwTimerId, slotTimerListIdx, pTimer->state);
 #endif
@@ -306,6 +308,7 @@ void TimerManager::Run()
 			{
 				pTimer->qwExpires = qwCurrentTimeMS + pTimer->qwPeriod;
 				AddTimer(this, pTimer, 0, idx, EAddTimerSource_TimeoutReadd);
+				pTimer->runAddCount++;
 			}
 			else
 			{
@@ -406,10 +409,16 @@ bool CreateTimer(TimerManager* pTimerManager, TimerIdType timerId, void(*timerFn
 	if (!bExists)
 	{
 		pTimer = AllocObj();
+		pTimer->qwCreateTime = 0;
+		pTimer->qwLastTriggerTime = 0;
+		pTimer->qwKillTime = 0;
+		pTimer->triggeredCount = 0;
+		pTimer->runAddCount = 0;
 	}
 	else
 	{
 		pTimerManager->pPendingDeleteTimers.erase(timerId);
+		pTimer->qwReuseTime = UTimerGetCurrentTimeMS();
 	}
 
 	if (pTimer != NULL)
@@ -418,6 +427,7 @@ bool CreateTimer(TimerManager* pTimerManager, TimerIdType timerId, void(*timerFn
 		pTimer->timerFn = timerFn;
 		pTimer->pParam = pParam;
 		pTimer->qwTimerId = timerId;
+		pTimer->qwCreateTime = UTimerGetCurrentTimeMS();
 		
 		SetTimerStateAnd(pTimer, ~ETimerState_Killed);
 		SetTimerStateOr(pTimer, ETimerState_Running);
@@ -447,6 +457,7 @@ bool KillTimer(TimerManager* pTimerManager, TimerIdType timerId)
 
 		pTimer->pPrev = nullptr;
 		pTimer->pNext = nullptr;
+		pTimer->qwKillTime = UTimerGetCurrentTimeMS();
 
 		SetTimerStateAnd(pTimer, ~ETimerState_Running);
 		SetTimerStateOr(pTimer, ETimerState_Killed | ETimerState_FrameChanged);
