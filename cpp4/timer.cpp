@@ -57,10 +57,6 @@ const char* pszAddTimerSource[] = {
 
 static void AddTimer(TimerManager* pTimerManager, TimerNode* pTimer, TimerMsType fromWheelIdx, TimerMsType fromSlotIdx, EAddTimerSource source)
 {
-#ifdef UNIQS_LOG_EVERYTHING
-	LOG(INFO) << "AddTimer timerId:"<<pTimer->qwTimerId<<"fromWheelIdx:" << fromWheelIdx << " fromSlotIdx:" << fromSlotIdx << " source:" << pszAddTimerSource[source];
-#endif
-
 	TimerMsType qwDueTime, qwExpires;
 
 	qwExpires = pTimer->qwExpires;

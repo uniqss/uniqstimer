@@ -262,7 +262,7 @@ void OnTimer(TimerIdType timerId, void* pParam)
 		shouldTimeMS += rInfo.dueTime * rInfo.triggeredCount + rInfo.period * rInfo.triggeredCountRepeate;
 
 		TimerMsType diff = shouldTimeMS > currMS ? shouldTimeMS - currMS : currMS - shouldTimeMS;
-		if (diff > 100)
+		if (diff > 300)
 		{
 			OnTimerError("timer time check error");
 		}
