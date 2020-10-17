@@ -14,10 +14,11 @@ bool bWorking = true;
 bool bTerminateOk = false;
 
 TimerIdType timerIdMotherStart = 1000000;
-TimerIdType timerIdMotherCount = 5000;
+TimerIdType timerIdMotherCount = 100;
 TimerIdType timerIdMotherStop = timerIdMotherStart + timerIdMotherCount;
 TimerIdType timerIdRandStart = 10000000;
 TimerIdType timerIdRandCount = 1000000;
+TimerIdType timerIdRandStop = timerIdRandStart + timerIdRandCount;
 
 class TestRandTimerInfo
 {
@@ -136,17 +137,17 @@ void OnTimer(TimerIdType timerId, void* pParam)
 	}
 #endif
 #if 1
-	static int RunningTimersCount = 100;
+	static int64_t RunningTimersCount = 100;
 	if (timerId >= timerIdMotherStart && timerId <= timerIdMotherStop)
 	{
 		// kill create rand
 		auto randTimerIdIdx = (rand() % timerIdRandCount);
 		auto randTimerId = randTimerIdIdx + timerIdRandStart;
 
-		auto randKill = rand() % 1000;
+		auto __randKill = rand() % 1000;
 		auto& rInfo = arrTestRandTimerInfos[randTimerIdIdx];
 		auto& rState = rInfo.state;
-		if (RunningTimersCount > 100 && randKill < 500)
+		if (RunningTimersCount > 100 && __randKill < 500)
 		{
 #ifdef UNIQS_LOG_EVERYTHING
 			LOG(INFO) << "OnTimer rand kill timerId:" << timerId << " rState:" << rState << " randTimerId:" << randTimerId << " currMS:" << currMS;
@@ -229,10 +230,10 @@ void OnTimer(TimerIdType timerId, void* pParam)
 
 #if 1
 	static TimerMsType lastTimeMS = UTimerGetCurrentTimeMS();
-	TimerMsType diff = currMS - lastTimeMS;
+	TimerMsType __diff = currMS - lastTimeMS;
 	static TimerMsType OnTimerTriggered = 0;
 	++OnTimerTriggered;
-	if (diff > 3000)
+	if (__diff > 3000)
 	{
 		printf("RunningTimersCount:%llu OnTimerTriggered:%llu\n", RunningTimersCount, OnTimerTriggered);
 		lastTimeMS = currMS;
@@ -309,6 +310,9 @@ void LogicThread()
 	*/
 #endif
 
+#if 0
+	CreateTimer(pMgr, 100, OnTimer, (void*)"1", 1, 1);
+#endif
 #if 0
 	CreateTimer(pMgr, 100, OnTimer, (void*)"100", 100, 100);
 #endif
