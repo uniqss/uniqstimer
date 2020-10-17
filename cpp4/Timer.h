@@ -7,6 +7,15 @@
 #include<unordered_set>
 #include<stdint.h>
 
+#if 1
+#define UNIQS_LOG_EVERYTHING
+#endif
+
+#ifdef UNIQS_LOG_EVERYTHING
+#include "glog_helper.h"
+#endif
+
+
 #define TimerMsType int64_t
 #define TimerIdType int64_t
 
@@ -15,18 +24,10 @@
 #define TIMER_WHEEL_COUNT 5
 #define TIMER_MASK ((1 << TIMER_BITS_PER_WHEEL) - 1)
 
-#define TVN_BITS 6
-#define TVR_BITS 8
-#define TVN_SIZE (1 << TVN_BITS)
-#define TVR_SIZE (1 << TVR_BITS)
-#define TVN_MASK (TVN_SIZE - 1)
-#define TVR_MASK (TVR_SIZE - 1)
-
-const int ETimerState_Invalid = 0;
+const int ETimerState_Killed = 0;
 const int ETimerState_Running = 1;
-const int ETimerState_Killed = 2;
 
-#if 1
+#if 0
 #define UNIQS_DEBUG_TIMER
 #endif
 
@@ -58,6 +59,7 @@ public:
 };
 
 int64_t UTimerGetCurrentTimeMS(void);
+void OnTimerError(const std::string& err);
 
 TimerManager* CreateTimerManager(void);
 

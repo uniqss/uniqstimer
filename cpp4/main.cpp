@@ -6,6 +6,9 @@
 
 #include<thread>
 
+#include "glog_helper.h"
+#pragma comment(lib, "glogd.lib")
+
 TimerManager* pMgr;
 bool bWorking = true;
 bool bTerminateOk = false;
@@ -19,7 +22,6 @@ class TestRandTimerInfo
 public:
 	int state;// 0д╛хо 1created 2killed
 	int triggeredCount;
-	bool isImmediate;
 	bool isRepeate;
 	int triggeredCountRepeate;
 	TimerMsType createTime;
@@ -35,7 +37,6 @@ public:
 	{
 		state = 0;
 		triggeredCount = 0;
-		isImmediate = false;
 		isRepeate = false;
 		triggeredCountRepeate = 0;
 		createTime = 0;
@@ -50,9 +51,16 @@ void OnTimer(TimerIdType timerId, void* pParam)
 {
 	const char* pszStr = (const char*)pParam;
 	auto currMS = UTimerGetCurrentTimeMS();
+
+#ifdef UNIQS_LOG_EVERYTHING
+	LOG(INFO) << "OnTimer timerId:" << timerId << " pszStr:" << pszStr << " currMS:" << currMS;
+#endif
+
 	auto ms = currMS % 1000;
 	auto s = currMS / 1000;
+#if 0
 	printf("OnTimer. timerId:%llu s:%llu ms:%llu str: %s\n", timerId, s, ms, pszStr);
+#endif
 	bool bOk = false;
 
 	auto randKill = rand() % 1000;
@@ -125,26 +133,29 @@ void OnTimer(TimerIdType timerId, void* pParam)
 		}
 	}
 #endif
-#if 0
+#if 1
+	static int RunningTimersCount = 100;
 	if (timerId >= 1000001 && timerId <= 1000100)
 	{
 		// kill create rand
 		auto randTimerIdIdx = (rand() % timerIdRandCount);
 		auto randTimerId = randTimerIdIdx + timerIdRandStart;
 
-		static int RunningTimersCount = 100;
 		auto randKill = rand() % 1000;
 		auto& rInfo = arrTestRandTimerInfos[randTimerIdIdx];
 		auto& rState = rInfo.state;
 		if (RunningTimersCount > 100 && randKill < 500)
 		{
+#ifdef UNIQS_LOG_EVERYTHING
+			LOG(INFO) << "OnTimer rand kill timerId:" << timerId << " rState:" << rState << " randTimerId:" << randTimerId << " currMS:" << currMS;
+#endif
 			// 0д╛хо 1created 2killed
 			if (rState == 1)
 			{
 				bOk = KillTimer(pMgr, randTimerId);
 				if (!bOk)
 				{
-					throw std::logic_error("OnTimer KillTimer failed randTimerId:" + std::to_string(randTimerId));
+					OnTimerError("OnTimer KillTimer failed randTimerId:" + std::to_string(randTimerId));
 					//printf("OnTimer KillTimer failed. timerId:%llu\n", timerId);
 				}
 				// set data
@@ -154,15 +165,18 @@ void OnTimer(TimerIdType timerId, void* pParam)
 				bOk = KillTimer(pMgr, randTimerId);
 				if (bOk)
 				{
-					throw std::logic_error("OnTimer KillTimer failed randTimerId:" + std::to_string(randTimerId));
+					OnTimerError("OnTimer KillTimer failed randTimerId:" + std::to_string(randTimerId));
 				}
 			}
 			else if (rState == 2 || rState == 0)
 			{
+#ifdef UNIQS_LOG_EVERYTHING
+				LOG(INFO) << "OnTimer rand kill timerId:" << timerId << " randTimerId:" << randTimerId << " currMS:" << currMS;
+#endif
 				bOk = KillTimer(pMgr, randTimerId);
 				if (bOk)
 				{
-					throw std::logic_error("OnTimer KillTimer failed randTimerId:" + std::to_string(randTimerId));
+					OnTimerError("OnTimer KillTimer failed randTimerId:" + std::to_string(randTimerId));
 				}
 				rState = 2;
 			}
@@ -170,22 +184,21 @@ void OnTimer(TimerIdType timerId, void* pParam)
 		TimerIdType randCreate = rand() % 10000;
 		if (RunningTimersCount < timerIdRandCount && randCreate < 8000)
 		{
-			auto randImmediate = (rand() % 2) > 0;
 			auto randRepeate = (rand() % 2) > 0;
-			if (randImmediate)
-			{
-				randRepeate = true;
-			}
-			TimerMsType t1 = randImmediate ? 0 : ((rand() % (131072 + 6)) + 1);
+			TimerMsType t1 = ((rand() % (131072 + 6)) + 1);
 			TimerMsType t2 = randRepeate ? ((rand() % (131072 + 6)) + 1) : 0;
 
+#ifdef UNIQS_LOG_EVERYTHING
+			LOG(INFO) << "OnTimer rand create timerId:" << timerId << " rState:" << rState << " randTimerId:" << randTimerId <<
+				" currMS:" << currMS << " t1:" << t1 << " t2:" << t2;
+#endif
 			// 0д╛хо 1created 2killed
 			if (rState == 1)
 			{
 				bOk = CreateTimer(pMgr, randTimerId, OnTimer, (void*)"", t1, t2);
 				if (bOk)
 				{
-					throw std::logic_error("OnTimer KillTimer failed randTimerId:" + std::to_string(randTimerId));
+					OnTimerError("OnTimer CreateTimer should fail but succeeded. randTimerId:" + std::to_string(randTimerId));
 				}
 			}
 			else
@@ -193,13 +206,12 @@ void OnTimer(TimerIdType timerId, void* pParam)
 				bOk = CreateTimer(pMgr, randTimerId, OnTimer, (void*)"", t1, t2);
 				if (!bOk)
 				{
-					throw std::logic_error("OnTimer KillTimer failed randTimerId:" + std::to_string(randTimerId));
+					OnTimerError("OnTimer CreateTimer should succeed but failed. randTimerId:" + std::to_string(randTimerId));
 				}
 				// set data
 				RunningTimersCount++;
 				rState = 1;
 				rInfo.triggeredCount = 0;
-				rInfo.isImmediate = randImmediate;
 				rInfo.isRepeate = randRepeate;
 				rInfo.createTime = currMS;
 				rInfo.dueTime = t1;
@@ -207,13 +219,23 @@ void OnTimer(TimerIdType timerId, void* pParam)
 				bOk = CreateTimer(pMgr, randTimerId, OnTimer, (void*)"", t1, t2);
 				if (bOk)
 				{
-					throw std::logic_error("OnTimer KillTimer failed randTimerId:" + std::to_string(randTimerId));
+					OnTimerError("OnTimer KillTimer failed randTimerId:" + std::to_string(randTimerId));
 				}
 			}
 		}
 	}
+
+#if 1
+	static TimerMsType lastTimeMS = UTimerGetCurrentTimeMS();
+	TimerMsType diff = currMS - lastTimeMS;
+	if (diff > 3000)
+	{
+		printf("RunningTimersCount:%llu\n", RunningTimersCount);
+		lastTimeMS = currMS;
+	}
 #endif
-#if 0
+#endif
+#if 1
 	if (timerId >= timerIdRandStart)
 	{
 		TimerMsType timerIdIdx = timerId - timerIdRandStart;
@@ -237,7 +259,7 @@ void OnTimer(TimerIdType timerId, void* pParam)
 		TimerMsType diff = shouldTimeMS > currMS ? shouldTimeMS - currMS : currMS - shouldTimeMS;
 		if (diff > 100)
 		{
-			throw std::logic_error("timer time check error");
+			OnTimerError("timer time check error");
 		}
 
 		if (!rInfo.isRepeate)
@@ -259,7 +281,7 @@ void LogicThread()
 		CreateTimer(pMgr, i, OnTimer, (void*)"test", t, t);
 	}
 #endif
-#if 0
+#if 1
 	for (size_t i = 1000001; i <= 1000100; i++)
 	{
 		CreateTimer(pMgr, i, OnTimer, (void*)"test", 1000, 1000);
@@ -283,12 +305,12 @@ void LogicThread()
 	*/
 #endif
 
-#if 1
+#if 0
 	CreateTimer(pMgr, 100, OnTimer, (void*)"100", 100, 100);
 #endif
-#if 1
-	//CreateTimer(pMgr, 300, OnTimer, (void*)"300", 300, 300);
-	//CreateTimer(pMgr, 600, OnTimer, (void*)"600", 600, 600);
+#if 0
+	CreateTimer(pMgr, 300, OnTimer, (void*)"300", 300, 300);
+	CreateTimer(pMgr, 600, OnTimer, (void*)"600", 600, 600);
 #endif
 
 	while (bWorking)
@@ -300,8 +322,9 @@ void LogicThread()
 }
 
 #define TIMERCOUNT 512
-int main(void)
+int main(int argc, const char** argv)
 {
+	init_glog(argv[0], "./logs");
 	arrTestRandTimerInfos.resize(timerIdRandCount);
 #ifdef UNIQS_DEBUG_TIMER
 	DebugDiffTimeMs = 0;
@@ -338,5 +361,7 @@ int main(void)
 	}
 
 	DestroyTimerManager(pMgr);
+
+	google::ShutdownGoogleLogging();
 	return 0;
 }
