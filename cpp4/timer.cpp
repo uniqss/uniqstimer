@@ -339,7 +339,15 @@ bool CreateTimer(TimerManager* pTimerManager, TimerIdType timerId, void(*timerFn
 	}
 
 #ifdef UNIQS_LOG_EVERYTHING
-	LOG(INFO) << "CreateTimer timerId:" << timerId << " bOk:" << bOk << " bParamOk:" << bParamOk << " exists:" << bExists;
+	if (bOk)
+	{
+		LOG(INFO) << "CreateTimer timerId:" << timerId << " bOk:" << bOk << " bParamOk:" << bParamOk << " exists:" << bExists << " qwDueTime:" <<
+			qwDueTime << " qwPeriod:" << qwPeriod << " pTimerManager->qwCurrentTimeMS:" << pTimerManager->qwCurrentTimeMS;
+	}
+	else
+	{
+		LOG(INFO) << "CreateTimer timerId:" << timerId << " bOk:" << bOk;
+	}
 #endif
 
 	return bOk;
