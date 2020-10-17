@@ -13,9 +13,11 @@ TimerManager* pMgr;
 bool bWorking = true;
 bool bTerminateOk = false;
 
-
+TimerIdType timerIdMotherStart = 1000000;
+TimerIdType timerIdMotherCount = 5000;
+TimerIdType timerIdMotherStop = timerIdMotherStart + timerIdMotherCount;
 TimerIdType timerIdRandStart = 10000000;
-TimerIdType timerIdRandCount = 30000;
+TimerIdType timerIdRandCount = 1000000;
 
 class TestRandTimerInfo
 {
@@ -101,7 +103,7 @@ void OnTimer(TimerIdType timerId, void* pParam)
 #endif
 	}
 #if 0
-	if (timerId < 1000001)
+	if (timerId < timerIdMotherStart)
 	{
 		bOk = KillTimer(pMgr, timerId);
 		if (!bOk)
@@ -135,7 +137,7 @@ void OnTimer(TimerIdType timerId, void* pParam)
 #endif
 #if 1
 	static int RunningTimersCount = 100;
-	if (timerId >= 1000001 && timerId <= 1000100)
+	if (timerId >= timerIdMotherStart && timerId <= timerIdMotherStop)
 	{
 		// kill create rand
 		auto randTimerIdIdx = (rand() % timerIdRandCount);
@@ -228,9 +230,11 @@ void OnTimer(TimerIdType timerId, void* pParam)
 #if 1
 	static TimerMsType lastTimeMS = UTimerGetCurrentTimeMS();
 	TimerMsType diff = currMS - lastTimeMS;
+	static TimerMsType OnTimerTriggered = 0;
+	++OnTimerTriggered;
 	if (diff > 3000)
 	{
-		printf("RunningTimersCount:%llu\n", RunningTimersCount);
+		printf("RunningTimersCount:%llu OnTimerTriggered:%llu\n", RunningTimersCount, OnTimerTriggered);
 		lastTimeMS = currMS;
 	}
 #endif
@@ -282,7 +286,7 @@ void LogicThread()
 	}
 #endif
 #if 1
-	for (size_t i = 1000001; i <= 1000100; i++)
+	for (TimerIdType i = timerIdMotherStart; i <= timerIdMotherStop; i++)
 	{
 		CreateTimer(pMgr, i, OnTimer, (void*)"test", 1000, 1000);
 	}

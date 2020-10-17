@@ -7,7 +7,7 @@
 #include<unordered_set>
 #include<stdint.h>
 
-#if 1
+#if 0
 #define UNIQS_LOG_EVERYTHING
 #endif
 
@@ -38,8 +38,6 @@ extern TimerMsType DebugDiffTimeMs;
 class TimerNode
 {
 public:
-	TimerNode* pPrev;
-	TimerNode* pNext;
 	TimerIdType qwTimerId;
 	TimerMsType qwExpires; // 
 	TimerMsType qwPeriod;
