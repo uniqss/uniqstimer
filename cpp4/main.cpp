@@ -125,7 +125,7 @@ void OnTimer(TimerIdType timerId, void* pParam)
 		}
 	}
 #endif
-#if 1
+#if 0
 	if (timerId >= 1000001 && timerId <= 1000100)
 	{
 		// kill create rand
@@ -213,7 +213,7 @@ void OnTimer(TimerIdType timerId, void* pParam)
 		}
 	}
 #endif
-#if 1
+#if 0
 	if (timerId >= timerIdRandStart)
 	{
 		TimerMsType timerIdIdx = timerId - timerIdRandStart;
@@ -259,15 +259,19 @@ void LogicThread()
 		CreateTimer(pMgr, i, OnTimer, (void*)"test", t, t);
 	}
 #endif
-#if 1
+#if 0
 	for (size_t i = 1000001; i <= 1000100; i++)
 	{
 		CreateTimer(pMgr, i, OnTimer, (void*)"test", 1000, 1000);
 	}
 #endif
-#if 0
+#if 1
+	/*
 	CreateTimer(pMgr, 1001, OnTimer, (void*)"this is first 100 ms then 100 ms repeated timer", 100, 100);
 	CreateTimer(pMgr, 2001, OnTimer, (void*)"this is first 100 ms then 1000 ms repeated timer", 100, 1000);
+	CreateTimer(pMgr, 2001, OnTimer, (void*)"this is first 300 ms then 1000 ms repeated timer", 300, 1000);
+	*/
+	/*
 	CreateTimer(pMgr, 1002, OnTimer, (void*)"this is first 500 ms then 0 ms timer", 500, 0);
 	CreateTimer(pMgr, 2002, OnTimer, (void*)"this is first 500 ms then 100 ms timer", 500, 100);
 	CreateTimer(pMgr, 1003, OnTimer, (void*)"this is first 600 ms then 0 ms timer", 600, 0);
@@ -276,14 +280,15 @@ void LogicThread()
 	CreateTimer(pMgr, 2004, OnTimer, (void*)"this is first 3000 ms then 0 ms timer", 3000, 0);
 	CreateTimer(pMgr, 1005, OnTimer, (void*)"this is first 0 ms then 4000 ms timer", 0, 4000);
 	CreateTimer(pMgr, 2005, OnTimer, (void*)"this is first 0 ms then 4000 ms timer", 0, 4000);
+	*/
 #endif
 
-#if 0
+#if 1
 	CreateTimer(pMgr, 100, OnTimer, (void*)"100", 100, 100);
 #endif
-#if 0
-	CreateTimer(pMgr, 300, OnTimer, (void*)"300", 300, 300);
-	CreateTimer(pMgr, 600, OnTimer, (void*)"600", 600, 600);
+#if 1
+	//CreateTimer(pMgr, 300, OnTimer, (void*)"300", 300, 300);
+	//CreateTimer(pMgr, 600, OnTimer, (void*)"600", 600, 600);
 #endif
 
 	while (bWorking)
@@ -300,7 +305,7 @@ int main(void)
 	arrTestRandTimerInfos.resize(timerIdRandCount);
 #ifdef UNIQS_DEBUG_TIMER
 	DebugDiffTimeMs = 0;
-#if 0
+#if 1
 	DebugDiffTimeMs = UTimerGetCurrentTimeMS();
 	//DebugDiffTimeMs -= 100 + 100 * (1 << TIMER_BITS_PER_WHEEL) + 100 * (1 << (2 * TIMER_BITS_PER_WHEEL)) + 100 * (1 << (3 * TIMER_BITS_PER_WHEEL));
 	DebugDiffTimeMs -= 100  + 100 * (1 << TIMER_BITS_PER_WHEEL);

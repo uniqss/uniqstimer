@@ -22,19 +22,17 @@
 #define TVN_MASK (TVN_SIZE - 1)
 #define TVR_MASK (TVR_SIZE - 1)
 
-const int ETimerState_Invalid = 0 << 0;
-const int ETimerState_Running = 1 << 1;
-const int ETimerState_Killed = 1 << 2;
-const int ETimerState_FrameChanged = 1 << 3;
+const int ETimerState_Invalid = 0;
+const int ETimerState_Running = 1;
+const int ETimerState_Killed = 2;
 
-#if 0
+#if 1
 #define UNIQS_DEBUG_TIMER
 #endif
 
 #ifdef UNIQS_DEBUG_TIMER
 extern TimerMsType DebugDiffTimeMs;
 #endif
-
 
 class TimerNode
 {
@@ -47,13 +45,6 @@ public:
 	void (*timerFn)(TimerIdType, void*);
 	void* pParam;
 	int state;
-	// for debug
-	TimerMsType qwCreateTime;
-	TimerMsType qwLastTriggerTime;
-	TimerMsType qwKillTime;
-	int triggeredCount;
-	int runAddCount;
-	TimerMsType qwReuseTime;
 };
 
 class TimerManager
@@ -61,12 +52,9 @@ class TimerManager
 public:
 	TimerMsType qwCurrentTimeMS; // current time ms
 	std::unordered_map<TimerIdType, TimerNode*> pTimers;
-	std::unordered_set<TimerIdType> pPendingDeleteTimers;
-	TimerNode arrListTimer[TIMER_WHEEL_COUNT][TIMER_COUNT_PER_WHEEL];
+	std::list<TimerNode*> arrListTimer[TIMER_WHEEL_COUNT][TIMER_COUNT_PER_WHEEL];
 public:
 	void Run();
-private:
-	void pendingFree();
 };
 
 int64_t UTimerGetCurrentTimeMS(void);
