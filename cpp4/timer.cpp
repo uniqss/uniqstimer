@@ -13,20 +13,7 @@
 TimerMsType DebugDiffTimeMs = 0;
 #endif
 
-enum EFucking
-{
-	EFucking_Crateing,
-	EFucking_Killing1,
-	EFucking_Killing2,
-	EFucking_Cascading1,
-	EFucking_Cascading2,
-	EFucking_Run1,
-	EFucking_Run2,
-	EFucking_Run3,
-	EFucking_Add1,
-};
-
-std::unordered_map<TimerNode*, std::list<std::tuple<EFucking, TimerIdType, TimerMsType, std::string>>> fucking;
+std::unordered_map<TimerNode*, TimerIdType> TimerNode2Id;
 
 TimerMsType UTimerGetCurrentTimeMS(void)
 {
@@ -39,10 +26,11 @@ TimerMsType UTimerGetCurrentTimeMS(void)
 #endif
 }
 
-void fuck(TimerNode* pTimer)
+void debugGetId(TimerNode* pTimer)
 {
-	auto it = fucking[pTimer];
-	static int size = it.size();
+	auto timerId = TimerNode2Id[pTimer];
+	static TimerIdType sTimerId = 0;
+	sTimerId = timerId;
 }
 
 void OnTimerError(const std::string& err)
@@ -141,9 +129,6 @@ static void AddTimer(TimerManager* pTimerManager, TimerNode* pTimer, TimerMsType
 	pTimer->wheelIdx = (int8_t)wheelIdx;
 	pTimer->slotIdx = (uint8_t)slotIdx;
 	pTimerManager->arrListTimer[wheelIdx][slotIdx].insert(pTimer);
-
-	fucking[pTimer].push_back(std::make_tuple(EFucking_Add1, pTimer->qwTimerId, pTimerManager->qwCurrentTimeMS, __FILE__ + __LINE__ + std::to_string(wheelIdx) + std::to_string(slotIdx)));
-
 }
 
 // 循环该slot里的所有节点，重新AddTimer到管理器中
@@ -168,10 +153,8 @@ static void CascadeTimer(TimerManager* pTimerManager, TimerMsType wheelIdx, Time
 			extern TimerIdType timerIdRandStop;
 			if (pTimer->qwTimerId < 0 || pTimer->qwTimerId >(timerIdRandStop + 100))
 			{
-				fuck(pTimer);
+				debugGetId(pTimer);
 			}
-
-			fucking[pTimer].push_back(std::make_tuple(EFucking_Cascading1, pTimer->qwTimerId, pTimerManager->qwCurrentTimeMS, __FILE__ + __LINE__));
 
 			AddTimer(pTimerManager, pTimer, wheelIdx, slotIdx, EAddTimerSource_Cascade);
 		}
@@ -181,9 +164,7 @@ static void CascadeTimer(TimerManager* pTimerManager, TimerMsType wheelIdx, Time
 			LOG(INFO) << "CascadeTimer killed delete qwTimerId:" << pTimer->qwTimerId << " wheelIdx:" << wheelIdx << " slotIdx:" << slotIdx;
 #endif
 
-			fucking[pTimer].push_back(std::make_tuple(EFucking_Cascading2, pTimer->qwTimerId, pTimerManager->qwCurrentTimeMS, __FILE__ + __LINE__));
-
-			fuck(pTimer);
+			debugGetId(pTimer);
 			// timer还没被放到最终执行轮就已经被kill掉了，需要释放掉
 			//pTimerManager->pTimers.erase(pTimer->qwTimerId);
 			// 这里不需要从槽中删除，完了清槽
@@ -231,8 +212,6 @@ void TimerManager::Run()
 				{
 					pTimer->qwExpires = qwCurrentTimeMS + pTimer->qwPeriod;
 
-					fucking[pTimer].push_back(std::make_tuple(EFucking_Run1, pTimer->qwTimerId, qwCurrentTimeMS, __FILE__ + __LINE__));
-
 					// 不需要从槽中删除，完了会清槽
 					AddTimer(this, pTimer, 0, idxExecutingWheel, EAddTimerSource_TimeoutReadd);
 				}
@@ -242,8 +221,6 @@ void TimerManager::Run()
 					LOG(INFO) << "TimerManager::Run running state. last trigger. kill delete timerId:" << timerId << " pTimer->qwPeriod:" <<
 						pTimer->qwPeriod << " pTimer->qwExpires:" << pTimer->qwExpires << " currTimeMS:" << currTimeMS;
 #endif
-
-					fucking[pTimer].push_back(std::make_tuple(EFucking_Run2, pTimer->qwTimerId, qwCurrentTimeMS, __FILE__ + __LINE__));
 
 					FreeObj(pTimer);
 					// 不需要从槽中删除，完了会清槽
@@ -256,8 +233,6 @@ void TimerManager::Run()
 				LOG(INFO) << "TimerManager::Run killed state. delete timerId:" << timerId << " pTimer->qwPeriod:" <<
 					pTimer->qwPeriod << " pTimer->qwExpires:" << pTimer->qwExpires << " currTimeMS:" << currTimeMS;
 #endif
-
-				fucking[pTimer].push_back(std::make_tuple(EFucking_Run3, pTimer->qwTimerId, qwCurrentTimeMS, __FILE__ + __LINE__));
 
 				FreeObj(pTimer);
 			}
@@ -357,7 +332,7 @@ bool CreateTimer(TimerManager* pTimerManager, TimerIdType timerId, void(*timerFn
 
 		pTimer->state = ETimerState_Running;
 
-		fucking[pTimer].push_back(std::make_tuple(EFucking_Crateing, timerId, pTimerManager->qwCurrentTimeMS, __FILE__ + __LINE__ + std::to_string(timerId)));
+		TimerNode2Id[pTimer] = timerId;
 
 		pTimer->qwExpires = pTimerManager->qwCurrentTimeMS + qwDueTime;
 		AddTimer(pTimerManager, pTimer, 0, 0, EAddTimerSource_Create_NewAlloc);
@@ -417,15 +392,11 @@ bool KillTimer(TimerManager* pTimerManager, TimerIdType timerId)
 			pTimerManager->pTimers.erase(it);
 			pTimerManager->arrListTimer[wheelIdx][slotIdx].erase(pTimer);
 			FreeObj(pTimer);
-
-			fucking[pTimer].push_back(std::make_tuple(EFucking_Killing1, timerId, pTimerManager->qwCurrentTimeMS, __FILE__ + __LINE__));
 		}
 		else
 		{
 			pTimer->state = ETimerState_Killed;
 			pTimerManager->pTimers.erase(it);
-
-			fucking[pTimer].push_back(std::make_tuple(EFucking_Killing2, timerId, pTimerManager->qwCurrentTimeMS, __FILE__ + __LINE__));
 		}
 
 		bOk = true;
