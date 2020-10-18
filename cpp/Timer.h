@@ -3,42 +3,65 @@
 #include <mutex>
 #include <thread>
 #include<atomic>
-#include<stdint.h>
+#include<unordered_map>
 #include<unordered_set>
+#include<stdint.h>
 
-#include "impl/simplepool.h"
-#include "impl/timernode.h"
-#include "timer_def.h"
+#if 0
+#define UNIQS_LOG_EVERYTHING
+#endif
+
+#ifdef UNIQS_LOG_EVERYTHING
+#include "glog_helper.h"
+#endif
+
+
+#define TimerMsType int64_t
+#define TimerIdType int64_t
+
+#define TIMER_BITS_PER_WHEEL 8
+#define TIMER_SLOT_COUNT_PER_WHEEL 1 << 8
+#define TIMER_WHEEL_COUNT 5
+#define TIMER_MASK ((1 << TIMER_BITS_PER_WHEEL) - 1)
+
+#if 0
+#define UNIQS_DEBUG_TIMER
+#endif
+
+#ifdef UNIQS_DEBUG_TIMER
+extern TimerMsType DebugDiffTimeMs;
+#endif
+
+class TimerNode
+{
+public:
+	TimerNode* pNext;
+	TimerIdType qwTimerId;
+	TimerMsType qwExpires; // 
+	TimerMsType qwPeriod;
+	void (*timerFn)(TimerIdType, void*);
+	void* pParam;
+	bool bRunning;
+};
 
 class TimerManager
 {
 public:
-	bool internalThread;
-	std::mutex lock;
-	std::thread* thread;
-	std::atomic<bool> threadWorking;
-	std::atomic<bool> threadWaitingTerminateOK;
-
-	TimerMsType currentTimeMS;
-	ListTimer arrListTimer1[TVR_SIZE];
-	ListTimer arrListTimer2[TVN_SIZE];
-	ListTimer arrListTimer3[TVN_SIZE];
-	ListTimer arrListTimer4[TVN_SIZE];
-	ListTimer arrListTimer5[TVN_SIZE];
-	ListTimer arrListTimer6[TVN_SIZE];
-
-	std::unordered_set<TimerIdType> pendingReleaseTimers;
-	
-	SimplePool<TimerNode> timerPool;
+	TimerMsType qwCurrentTimeMS; // current time ms
+	std::unordered_map<TimerIdType, TimerNode*> pTimers;
+	TimerNode* arrListTimer[TIMER_WHEEL_COUNT][TIMER_SLOT_COUNT_PER_WHEEL];
+public:
+	void Run();
 };
 
-uint64_t UTimerGetCurrentTimeMS(void);
+int64_t UTimerGetCurrentTimeMS(void);
+void OnTimerError(const std::string& err);
 
-TimerManager* CreateTimerManager(bool internalThraed);
+TimerManager* CreateTimerManager(void);
 
-void DestroyTimerManager(TimerManager* lpTimerManager);
+void DestroyTimerManager(TimerManager* pTimerManager);
 
-bool CreateTimer(TimerIdType timerId, TimerManager* lpTimerManager, void (*timerFn)(TimerIdType, void*), void* pParam, TimerMsType uDueTime, TimerMsType uPeriod);
+// qwDueTime: first timeout   qwPeriod: then periodic timeout.(0: one shot timer)
+bool CreateTimer(TimerManager* pTimerManager, TimerIdType timerId, void (*timerFn)(TimerIdType, void*), void* pParam, TimerMsType qwDueTime, TimerMsType qwPeriod);
 
-bool KillTimer(TimerManager* lpTimerManager, TimerIdType timerId);
-
+bool KillTimer(TimerManager* pTimerManager, TimerIdType timerId);

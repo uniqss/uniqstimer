@@ -13,31 +13,16 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="impl">
-      <UniqueIdentifier>{33ac14e6-5099-4e76-a2a5-ea5e4b8f3f52}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="timer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="impl\timernode.h">
-      <Filter>impl</Filter>
-    </ClInclude>
-    <ClInclude Include="impl\simplepool.h">
-      <Filter>impl</Filter>
-    </ClInclude>
-    <ClInclude Include="timer_def.h">
+    <ClInclude Include="timer_mem.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="simplemessagequeue.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="OnMsg.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="def.h">
-      <Filter>Source Files</Filter>
+    <ClInclude Include="glog_helper.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -47,13 +32,10 @@
     <ClCompile Include="timer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="simplemessagequeue.cpp">
+    <ClCompile Include="timer_mem.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="main_fulltestcase.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="OnMsg.cpp">
+    <ClCompile Include="glog_helper.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

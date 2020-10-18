@@ -1,325 +1,341 @@
 ﻿#include "Timer.h"
 
+#include "timer_mem.h"
+
 #include <stddef.h>
 #include <stdlib.h>
 #include<chrono>
+#include <cassert>
 
-#include "impl/timernode.h"
 
-uint64_t UTimerGetCurrentTimeMS(void)
+#ifdef UNIQS_DEBUG_TIMER
+TimerMsType DebugDiffTimeMs = 0;
+#endif
+
+TimerMsType UTimerGetCurrentTimeMS(void)
 {
 	auto time_now = std::chrono::system_clock::now();
 	auto duration_in_ms = std::chrono::duration_cast<std::chrono::milliseconds>(time_now.time_since_epoch());
-	return duration_in_ms.count();
+#ifdef UNIQS_DEBUG_TIMER
+	return (TimerMsType)duration_in_ms.count() - DebugDiffTimeMs;
+#else
+	return (TimerMsType)duration_in_ms.count();
+#endif
 }
 
-static void ListTimerInsert(ListTimer* pNew, ListTimer* pPrev, ListTimer* pNext)
+void OnTimerError(const std::string& err)
 {
-	pNext->pPrev = pNew;
-	pNew->pNext = pNext;
-	pNew->pPrev = pPrev;
-	pPrev->pNext = pNew;
+#ifdef UNIQS_LOG_EVERYTHING
+	LOG(INFO) << "OnTimer error err:" << err;
+#endif
+
+	throw std::logic_error("OnTimerError" + err);
+
+	//printf("OnTimer error err:%s\n", err.c_str());
 }
 
-static void ListTimerInsertHead(ListTimer* pNew, ListTimer* pHead)
+enum EAddTimerSource
 {
-	ListTimerInsert(pNew, pHead, pHead->pNext);
-}
+	EAddTimerSource_Create_NewAlloc,
+	EAddTimerSource_Cascade,
+	EAddTimerSource_TimeoutReadd,
+};
+const char* pszAddTimerSource[] = {
+	"EAddTimerSource_Create_NewAlloc",
+	"EAddTimerSource_Cascade",
+	"EAddTimerSource_TimeoutReadd",
+};
 
-static void ListTimerInsertTail(ListTimer* pNew, ListTimer* pHead)
+static void AddTimer(TimerManager* pTimerManager, TimerNode* pTimer, TimerMsType fromWheelIdx, TimerMsType fromSlotIdx, EAddTimerSource source)
 {
-	ListTimerInsert(pNew, pHead->pPrev, pHead);
-}
+#ifdef UNIQS_LOG_EVERYTHING
+	LOG(INFO) << "AddTimer timerId:"<<pTimer->qwTimerId<<"fromWheelIdx:" << fromWheelIdx << " fromSlotIdx:" << fromSlotIdx << " source:" << pszAddTimerSource[source];
+#endif
 
-static void ListTimerReplace(ListTimer* pOld, ListTimer* pNew)
-{
-	pNew->pNext = pOld->pNext;
-	pNew->pNext->pPrev = pNew;
-	pNew->pPrev = pOld->pPrev;
-	pNew->pPrev->pNext = pNew;
-}
+	TimerMsType i = 0, qwDueTime, qwExpires;
+	TimerMsType wheelIdx = 0;
+	TimerMsType slotIdx = 0;
 
-static void ListTimerReplaceInit(ListTimer* pOld, ListTimer* pNew)
-{
-	ListTimerReplace(pOld, pNew);
-	pOld->pNext = pOld;
-	pOld->pPrev = pOld;
-}
+	qwExpires = pTimer->qwExpires;
+	qwDueTime = qwExpires - pTimerManager->qwCurrentTimeMS;
 
-static void InitArrayListTimer(ListTimer* arrListTimer, TimerMsType nSize)
-{
-	TimerMsType i;
-	for (i = 0; i < nSize; i++)
+#if defined( UNIQS_DEBUG_TIMER ) || defined (UNIQS_LOG_EVERYTHING)
+	bool negative = false;
+#endif
+
+	if (false) {}
+	else if (qwDueTime < TimerIdType(1) << (TIMER_BITS_PER_WHEEL * (0 + 1)))
 	{
-		arrListTimer[i].pPrev = &arrListTimer[i];
-		arrListTimer[i].pNext = &arrListTimer[i];
+		i = (qwExpires >> (TIMER_BITS_PER_WHEEL * 0)) & TIMER_MASK;
+		wheelIdx = 0;
+		slotIdx = i;
 	}
-}
-
-// 内存统一由池管理
-static void DeleteArrayListTimer(ListTimer* arrListTimer, TimerMsType uSize)
-{
-	//ListTimer listTmr, * pListTimer;
-	//TimerNode* pTmr;
-	//TimerMsType idx;
-
-	//for (idx = 0; idx < uSize; idx++)
-	//{
-	//	ListTimerReplaceInit(&arrListTimer[idx], &listTmr);
-	//	pListTimer = listTmr.pNext;
-	//	while (pListTimer != &listTmr)
-	//	{
-	//		pTmr = (TimerNode*)((uint8_t*)pListTimer - offsetof(TimerNode, ltTimer));
-	//		pListTimer = pListTimer->pNext;
-	//		delete pTmr;
-	//	}
-	//}
-}
-
-static void AddTimer(TimerManager* lpTimerManager, TimerNode* pTmr)
-{
-	ListTimer* pHead;
-	TimerMsType i, uDueTime, uExpires;
-
-	uExpires = pTmr->uExpires;
-	uDueTime = uExpires - lpTimerManager->currentTimeMS;
-	if (uDueTime < TVR_SIZE)
+	else if (qwDueTime < TimerIdType(1) << (TIMER_BITS_PER_WHEEL * (1 + 1)))
 	{
-		i = uExpires & TVR_MASK;
-		pHead = &lpTimerManager->arrListTimer1[i];
+		i = (qwExpires >> (TIMER_BITS_PER_WHEEL * 1)) & TIMER_MASK;
+		wheelIdx = 1;
+		slotIdx = i;
 	}
-	else if (uDueTime < TimerMsType(1) << (TVR_BITS + 1 * TVN_BITS))
+	else if (qwDueTime < TimerIdType(1) << (TIMER_BITS_PER_WHEEL * (2 + 1)))
 	{
-		i = (uExpires >> TVR_BITS) & TVN_MASK;
-		pHead = &lpTimerManager->arrListTimer2[i];
+		i = (qwExpires >> (TIMER_BITS_PER_WHEEL * 2)) & TIMER_MASK;
+		wheelIdx = 2;
+		slotIdx = i;
 	}
-	else if (uDueTime < TimerMsType(1) << (TVR_BITS + 2 * TVN_BITS))
+	else if (qwDueTime < TimerIdType(1) << (TIMER_BITS_PER_WHEEL * (3 + 1)))
 	{
-		i = (uExpires >> (TVR_BITS + TVN_BITS)) & TVN_MASK;
-		pHead = &lpTimerManager->arrListTimer3[i];
+		i = (qwExpires >> (TIMER_BITS_PER_WHEEL * 3)) & TIMER_MASK;
+		wheelIdx = 3;
+		slotIdx = i;
 	}
-	else if (uDueTime < TimerMsType(1) << (TVR_BITS + 3 * TVN_BITS))
+	else if (qwDueTime < TimerIdType(1) << (TIMER_BITS_PER_WHEEL * (4 + 1)))
 	{
-		i = (uExpires >> (TVR_BITS + 2 * TVN_BITS)) & TVN_MASK;
-		pHead = &lpTimerManager->arrListTimer4[i];
+		i = (qwExpires >> (TIMER_BITS_PER_WHEEL * 4)) & TIMER_MASK;
+		wheelIdx = 4;
+		slotIdx = i;
 	}
-	else if (uDueTime < TimerMsType(1) << (TVR_BITS + 4 * TVN_BITS))
+	else if (qwDueTime < 0)
 	{
-		i = (uExpires >> (TVR_BITS + 3 * TVN_BITS)) & TVN_MASK;
-		pHead = &lpTimerManager->arrListTimer5[i];
-	}
-	else if ((signed long)uDueTime < 0)
-	{
-		pHead = &lpTimerManager->arrListTimer1[(lpTimerManager->currentTimeMS & TVR_MASK)];
+		wheelIdx = 0;
+		slotIdx = pTimerManager->qwCurrentTimeMS & TIMER_MASK;
+#if defined( UNIQS_DEBUG_TIMER ) || defined (UNIQS_LOG_EVERYTHING)
+		negative = true;
+#endif
 	}
 	else
 	{
-		if (uDueTime > TimerMsType(0xffffffffffffffffULL))
-		{
-			uDueTime = TimerMsType(0xffffffffffffffffULL);
-			uExpires = uDueTime + lpTimerManager->currentTimeMS;
-		}
-		i = (uExpires >> (TVR_BITS + 4 * TVN_BITS)) & TVN_MASK;
-		pHead = &lpTimerManager->arrListTimer5[i];
-	}
-	ListTimerInsertTail(&pTmr->ltTimer, pHead);
-}
-
-static TimerMsType CascadeTimer(TimerManager* lpTimerManager, ListTimer* arrListTimer, TimerMsType idx)
-{
-	ListTimer listTmr, * pListTimer;
-	TimerNode* pTmr;
-
-	ListTimerReplaceInit(&arrListTimer[idx], &listTmr);
-	pListTimer = listTmr.pNext;
-	while (pListTimer != &listTmr)
-	{
-		pTmr = (TimerNode*)((uint8_t*)pListTimer - offsetof(TimerNode, ltTimer));
-		pListTimer = pListTimer->pNext;
-		AddTimer(lpTimerManager, pTmr);
-	}
-	return idx;
-}
-
-static void RunTimer(TimerManager* lpTimerManager)
-{
-#define INDEX(N) ((lpTimerManager->currentTimeMS >> (TVR_BITS + (N) * TVN_BITS)) & TVN_MASK)
-	TimerMsType idx, timeMS;
-	ListTimer listTmrExpire, * pListTmrExpire;
-	TimerNode* pTimer;
-
-	if (NULL == lpTimerManager)
+		OnTimerError("AddTimer this should not happen");
 		return;
-	timeMS = UTimerGetCurrentTimeMS();
-	lpTimerManager->lock.lock();
-	while (timeMS >= lpTimerManager->currentTimeMS)
-	{
-		idx = lpTimerManager->currentTimeMS & TVR_MASK;
-		if (!idx &&
-			!CascadeTimer(lpTimerManager, lpTimerManager->arrListTimer2, INDEX(0)) &&
-			!CascadeTimer(lpTimerManager, lpTimerManager->arrListTimer3, INDEX(1)) &&
-			!CascadeTimer(lpTimerManager, lpTimerManager->arrListTimer4, INDEX(2)) &&
-			!CascadeTimer(lpTimerManager, lpTimerManager->arrListTimer5, INDEX(3)) &&
-			true)
-		{
-			CascadeTimer(lpTimerManager, lpTimerManager->arrListTimer6, INDEX(4));
-		}
-		pListTmrExpire = &listTmrExpire;
-		ListTimerReplaceInit(&lpTimerManager->arrListTimer1[idx], pListTmrExpire);
-		pListTmrExpire = pListTmrExpire->pNext;
-		while (pListTmrExpire != &listTmrExpire)
-		{
-			pTimer = (TimerNode*)((uint8_t*)pListTmrExpire - offsetof(TimerNode, ltTimer));
-			pListTmrExpire = pListTmrExpire->pNext;
-			pTimer->timerFn(pTimer->id, pTimer->pParam);
-			if (pTimer->state == ETimerStateRunning && pTimer->FrameKilled)
-			{
-				pTimer->FrameKilled = false;
-				continue;
-			}
-			if (pTimer->state == ETimerStateKilled)
-			{
-				lpTimerManager->pendingReleaseTimers.insert(pTimer->id);
-			}
-			else if (pTimer->uPeriod != 0)
-			{
-				pTimer->uExpires = lpTimerManager->currentTimeMS + pTimer->uPeriod;
-				AddTimer(lpTimerManager, pTimer);
-			}
-			pTimer->FrameKilled = false;
-		}
-		for (auto it : lpTimerManager->pendingReleaseTimers)
-		{
-			lpTimerManager->timerPool.ReleaseObj(it);
-		}
-		lpTimerManager->currentTimeMS++;
-	}
-	lpTimerManager->lock.unlock();
-}
-
-static void* ThreadRunTimer(void* pParam)
-{
-	TimerManager* pTimerMgr;
-
-	pTimerMgr = (TimerManager*)pParam;
-	if (pTimerMgr == NULL)
-		return NULL;
-	while (pTimerMgr->threadWorking)
-	{
-		RunTimer(pTimerMgr);
-		std::this_thread::sleep_for(std::chrono::milliseconds(1));
 	}
 
-	pTimerMgr->threadWaitingTerminateOK = true;
-	return NULL;
+#ifdef UNIQS_LOG_EVERYTHING
+	LOG(INFO) << "AddTimer timerId:" << pTimer->qwTimerId << " source:" << pszAddTimerSource[source] << " fromWheelIdx:" << fromWheelIdx << " fromSlotIdx:" << fromSlotIdx <<
+		" wheelIdx:" << wheelIdx << " slotIdx:" << slotIdx << " negative:" << negative << " qwDueTime:" << qwDueTime <<
+		" qwExpires:" << qwExpires << " qwCurrentTimeMS:" << pTimerManager->qwCurrentTimeMS;
+#endif
+
+#if defined (UNIQS_DEBUG_TIMER )
+	printf("AddTimer source:%s fromWheelIdx:%llu fromSlotIdx:%llu wheelIdx:%llu slotIdx:%llu negative:%d qwDueTime:%llu qwExpires:%llu qwCurrentTimeMS:%llu\n",
+		pszAddTimerSource[source], fromWheelIdx, fromSlotIdx, wheelIdx, slotIdx, int(negative), qwDueTime, qwExpires, pTimerManager->qwCurrentTimeMS);
+#endif
+	//printf("AddTimer qwExpires:%llu qwDueTime:%llu i:%llu pTimerManager->qwCurrentTimeMS:%llu\n", qwExpires, qwDueTime, i, pTimerManager->qwCurrentTimeMS);
+	if (pTimerManager->arrListTimer[wheelIdx][slotIdx] == nullptr)
+	{
+		pTimerManager->arrListTimer[wheelIdx][slotIdx] = pTimer;
+		pTimer->pNext = nullptr;
+	}
+	else
+	{
+		pTimer->pNext = pTimerManager->arrListTimer[wheelIdx][slotIdx];
+		pTimerManager->arrListTimer[wheelIdx][slotIdx] = pTimer;
+	}
 }
 
-TimerManager* CreateTimerManager(bool internalThraed)
+// 循环该slot里的所有节点，重新AddTimer到管理器中
+static void CascadeTimer(TimerManager* pTimerManager, TimerMsType wheelIdx, TimerMsType slotIdx)
 {
-	TimerManager* lpTimerMgr = new TimerManager();
-	if (lpTimerMgr != NULL)
+#ifdef UNIQS_LOG_EVERYTHING
+	LOG(INFO) << "CascadeTimer begin wheelIdx:" << wheelIdx << " slotIdx:" << slotIdx;
+#endif
+#ifdef UNIQS_DEBUG_TIMER
+	printf("CascadeTimer begin wheelIdx:%llu slotIdx:%llu \n", wheelIdx, slotIdx);
+#endif
+	TimerNode* pTimer = pTimerManager->arrListTimer[wheelIdx][slotIdx];
+	TimerNode* pNext = nullptr;
+	for (;pTimer != nullptr;pTimer = pNext)
 	{
-		if (internalThraed)
-		{
-			lpTimerMgr->internalThread = internalThraed;
-			lpTimerMgr->threadWorking = true;
-			lpTimerMgr->currentTimeMS = UTimerGetCurrentTimeMS();
-		}
-		InitArrayListTimer(lpTimerMgr->arrListTimer1, sizeof(lpTimerMgr->arrListTimer1) / sizeof(lpTimerMgr->arrListTimer1[0]));
-		InitArrayListTimer(lpTimerMgr->arrListTimer2, sizeof(lpTimerMgr->arrListTimer2) / sizeof(lpTimerMgr->arrListTimer2[0]));
-		InitArrayListTimer(lpTimerMgr->arrListTimer3, sizeof(lpTimerMgr->arrListTimer3) / sizeof(lpTimerMgr->arrListTimer3[0]));
-		InitArrayListTimer(lpTimerMgr->arrListTimer4, sizeof(lpTimerMgr->arrListTimer4) / sizeof(lpTimerMgr->arrListTimer4[0]));
-		InitArrayListTimer(lpTimerMgr->arrListTimer5, sizeof(lpTimerMgr->arrListTimer5) / sizeof(lpTimerMgr->arrListTimer5[0]));
-		InitArrayListTimer(lpTimerMgr->arrListTimer6, sizeof(lpTimerMgr->arrListTimer6) / sizeof(lpTimerMgr->arrListTimer6[0]));
+		pNext = pTimer->pNext;
 
-		if (internalThraed)
+		if (pTimer->bRunning)
 		{
-			lpTimerMgr->threadWaitingTerminateOK = false;
-			lpTimerMgr->thread = std::move(new std::thread(ThreadRunTimer, lpTimerMgr));
+#ifdef UNIQS_LOG_EVERYTHING
+			LOG(INFO) << "CascadeTimer running AddTimer qwTimerId:" << pTimer->qwTimerId << " wheelIdx:" << wheelIdx << " slotIdx:" << slotIdx;
+#endif
+			AddTimer(pTimerManager, pTimer, wheelIdx, slotIdx, EAddTimerSource_Cascade);
+		}
+		else
+		{
+#ifdef UNIQS_LOG_EVERYTHING
+			LOG(INFO) << "CascadeTimer killed delete qwTimerId:" << pTimer->qwTimerId << " wheelIdx:" << wheelIdx << " slotIdx:" << slotIdx;
+#endif
+			// timer还没被放到最终执行轮就已经被kill掉了，需要释放掉
+			//pTimerManager->pTimers.erase(pTimer->qwTimerId);
+			FreeObj(pTimer);
 		}
 	}
-	return lpTimerMgr;
+	pTimerManager->arrListTimer[wheelIdx][slotIdx] = nullptr;
 }
 
-void DestroyTimerManager(TimerManager* lpTimerManager)
+void TimerManager::Run()
 {
-	if (NULL == lpTimerManager)
+	TimerMsType idx = 0, idxTmp = 0, currTimeMS;
+
+	currTimeMS = UTimerGetCurrentTimeMS();
+	TimerIdType timerId = 0;
+	while (currTimeMS >= qwCurrentTimeMS)
+	{
+		idx = qwCurrentTimeMS & TIMER_MASK;
+
+		idxTmp = idx;
+		for (TimerMsType i = 0; i < 4 && idxTmp == 0; i++)
+		{
+			idxTmp = (qwCurrentTimeMS >> ((i + 1) * TIMER_BITS_PER_WHEEL)) & TIMER_MASK;
+			CascadeTimer(this, i + 1, idxTmp);
+		}
+
+		TimerNode* pTimer = arrListTimer[0][idx];
+		TimerNode* pNext = nullptr;
+		for (;pTimer != nullptr;pTimer = pNext)
+		{
+			pNext = pTimer->pNext;
+
+			timerId = pTimer->qwTimerId;
+			if (pTimer->bRunning)
+			{
+				pTimer->timerFn(pTimer->qwTimerId, pTimer->pParam);
+				if (pTimer->qwPeriod != 0)
+				{
+					pTimer->qwExpires = qwCurrentTimeMS + pTimer->qwPeriod;
+					AddTimer(this, pTimer, 0, idx, EAddTimerSource_TimeoutReadd);
+				}
+				else
+				{
+#ifdef UNIQS_LOG_EVERYTHING
+					LOG(INFO) << "TimerManager::Run running state. last trigger. kill delete timerId:" << timerId << " pTimer->qwPeriod:" <<
+						pTimer->qwPeriod << " pTimer->qwExpires:" << pTimer->qwExpires << " currTimeMS:" << currTimeMS;
+#endif
+					FreeObj(pTimer);
+					pTimers.erase(timerId);
+				}
+			}
+			else
+			{
+#ifdef UNIQS_LOG_EVERYTHING
+				LOG(INFO) << "TimerManager::Run killed state. delete timerId:" << timerId << " pTimer->qwPeriod:" <<
+					pTimer->qwPeriod << " pTimer->qwExpires:" << pTimer->qwExpires << " currTimeMS:" << currTimeMS;
+#endif
+				FreeObj(pTimer);
+			}
+		}
+		arrListTimer[0][idx] = nullptr;
+
+		qwCurrentTimeMS++;
+	}
+}
+
+TimerManager* CreateTimerManager(void)
+{
+	TimerManager* pTimerManager = new TimerManager();
+	if (pTimerManager != NULL)
+	{
+		for (auto wheelIdx = 0; wheelIdx < TIMER_WHEEL_COUNT; wheelIdx++)
+		{
+			for (auto slotIdx = 0; slotIdx < TIMER_SLOT_COUNT_PER_WHEEL; slotIdx++)
+			{
+				pTimerManager->arrListTimer[wheelIdx][slotIdx] = nullptr;
+			}
+		}
+
+		pTimerManager->qwCurrentTimeMS = UTimerGetCurrentTimeMS();
+	}
+	return pTimerManager;
+}
+
+void DestroyTimerManager(TimerManager* pTimerManager)
+{
+	if (NULL == pTimerManager)
 		return;
-	if (lpTimerManager->internalThread)
+	for (auto wheelIdx = 0; wheelIdx < TIMER_WHEEL_COUNT; wheelIdx++)
 	{
-		lpTimerManager->threadWorking = false;
-		while (!lpTimerManager->threadWaitingTerminateOK)
+		for (auto slotIdx = 0; slotIdx < TIMER_SLOT_COUNT_PER_WHEEL; slotIdx++)
 		{
-			std::this_thread::sleep_for(std::chrono::milliseconds(1));
+			TimerNode* pTimer = pTimerManager->arrListTimer[wheelIdx][slotIdx];
+			TimerNode* pNext = nullptr;
+			for (;pTimer != nullptr;pTimer = pNext)
+			{
+				pNext = pTimer->pNext;
+
+				FreeObj(pTimer);
+			}
 		}
 	}
-	DeleteArrayListTimer(lpTimerManager->arrListTimer1, sizeof(lpTimerManager->arrListTimer1) / sizeof(lpTimerManager->arrListTimer1[0]));
-	DeleteArrayListTimer(lpTimerManager->arrListTimer2, sizeof(lpTimerManager->arrListTimer2) / sizeof(lpTimerManager->arrListTimer2[0]));
-	DeleteArrayListTimer(lpTimerManager->arrListTimer3, sizeof(lpTimerManager->arrListTimer3) / sizeof(lpTimerManager->arrListTimer3[0]));
-	DeleteArrayListTimer(lpTimerManager->arrListTimer4, sizeof(lpTimerManager->arrListTimer4) / sizeof(lpTimerManager->arrListTimer4[0]));
-	DeleteArrayListTimer(lpTimerManager->arrListTimer5, sizeof(lpTimerManager->arrListTimer5) / sizeof(lpTimerManager->arrListTimer5[0]));
-	DeleteArrayListTimer(lpTimerManager->arrListTimer6, sizeof(lpTimerManager->arrListTimer6) / sizeof(lpTimerManager->arrListTimer6[0]));
-
-	lpTimerManager->timerPool.Destroy();
-
-	delete lpTimerManager;
+	delete pTimerManager;
 }
 
-bool CreateTimer(TimerIdType timerId, TimerManager* lpTimerManager, void (*timerFn)(TimerIdType, void*), void* pParam, TimerMsType uDueTime, TimerMsType uPeriod)
+bool CreateTimer(TimerManager* pTimerManager, TimerIdType timerId, void(*timerFn)(TimerIdType, void*), void* pParam, TimerMsType qwDueTime, TimerMsType qwPeriod)
 {
 	TimerNode* pTimer = NULL;
-	if (NULL == timerFn || NULL == lpTimerManager)
+	if (NULL == timerFn || NULL == pTimerManager)
 		return false;
-	if (lpTimerManager->internalThread)
-	{
-		lpTimerManager->lock.lock();
-	}
-	pTimer = lpTimerManager->timerPool.CreateObj(timerId);
-	if (pTimer != NULL)
-	{
-		pTimer->uPeriod = uPeriod;
-		pTimer->timerFn = timerFn;
-		pTimer->pParam = pParam;
-		pTimer->state = ETimerStateRunning;
 
-		pTimer->uExpires = lpTimerManager->currentTimeMS + uDueTime;
-		AddTimer(lpTimerManager, pTimer);
-	}
-	if (lpTimerManager->internalThread)
+#ifdef UNIQS_LOG_EVERYTHING
+	LOG(INFO) << "CreateTimer timerId:" << timerId << " qwDueTime:" <<
+		qwDueTime << " qwPeriod:" << qwPeriod << " pTimerManager->qwCurrentTimeMS:" << pTimerManager->qwCurrentTimeMS;
+#endif
+	// 两者都为0,无意义
+	if (qwDueTime == 0 && qwPeriod == 0)
 	{
-		lpTimerManager->lock.unlock();
+		return false;
 	}
+
+	// 如果创建重复性定时器，又设置触发时间为0,就直接把时间设置为重复时间
+	if (qwDueTime == 0)
+	{
+		return false;
+	}
+
+	auto it = pTimerManager->pTimers.find(timerId);
+	if (it != pTimerManager->pTimers.end())
+	{
+		return false;
+	}
+
+	pTimer = AllocObj();
+	if (pTimer == nullptr)
+	{
+		OnTimerError("CreateTimer AllocObj failed.");
+		return false;
+	}
+
+	pTimer->qwPeriod = qwPeriod;
+	pTimer->timerFn = timerFn;
+	pTimer->pParam = pParam;
+	pTimer->qwTimerId = timerId;
+
+	pTimer->bRunning = true;
+
+	pTimer->qwExpires = pTimerManager->qwCurrentTimeMS + qwDueTime;
+	AddTimer(pTimerManager, pTimer, 0, 0, EAddTimerSource_Create_NewAlloc);
+	pTimerManager->pTimers[timerId] = pTimer;
+
 	return true;
 }
 
-
-bool KillTimer(TimerManager* lpTimerManager, TimerIdType timerId)
+bool KillTimer(TimerManager* pTimerManager, TimerIdType timerId)
 {
-	ListTimer* pListTmr;
-	if (NULL != lpTimerManager && timerId != 0)
-	{
-		if (lpTimerManager->internalThread)
-		{
-			lpTimerManager->lock.lock();
-		}
-		auto pTimer = lpTimerManager->timerPool.FindObj(timerId);
-		if (pTimer != nullptr)
-		{
-			pListTmr = &pTimer->ltTimer;
-			pListTmr->pPrev->pNext = pListTmr->pNext;
-			pListTmr->pNext->pPrev = pListTmr->pPrev;
-			pTimer->state = ETimerStateKilled;
-			pTimer->FrameKilled = true;
-			lpTimerManager->pendingReleaseTimers.insert(timerId);
-		}
-		if (lpTimerManager->internalThread)
-		{
-			lpTimerManager->lock.unlock();
-		}
-		return true;
-	}
-	else
+	TimerNode* pTimer;
+	if (pTimerManager == nullptr)
 	{
 		return false;
 	}
+	auto it = pTimerManager->pTimers.find(timerId);
+#ifdef UNIQS_LOG_EVERYTHING
+	LOG(INFO) << "KillTimer timerId:" << timerId << " exists:" <<
+		(it == pTimerManager->pTimers.end());
+#endif
+	if (it == pTimerManager->pTimers.end())
+	{
+		return false;
+	}
+
+	pTimer = it->second;
+	if (!pTimer->bRunning)
+	{
+		return false;
+	}
+
+	pTimer->bRunning = false;
+	pTimerManager->pTimers.erase(it);
+
+	return true;
 }

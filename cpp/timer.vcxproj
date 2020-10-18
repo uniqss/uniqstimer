@@ -32,6 +32,7 @@
     <ProjectGuid>{629a45ae-725b-41f3-bfab-5f1600caead5}</ProjectGuid>
     <RootNamespace>timer</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>timer4</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -145,10 +146,11 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
+      <WarningLevel>Level4</WarningLevel>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>.</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -200,20 +202,15 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="def.h" />
-    <ClInclude Include="impl\timernode.h" />
-    <ClInclude Include="impl\simplepool.h" />
-    <ClInclude Include="OnMsg.h" />
-    <ClInclude Include="simplemessagequeue.h" />
+    <ClInclude Include="glog_helper.h" />
     <ClInclude Include="timer.h" />
-    <ClInclude Include="timer_def.h" />
+    <ClInclude Include="timer_mem.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="main_fulltestcase.cpp" />
-    <ClCompile Include="OnMsg.cpp" />
-    <ClCompile Include="simplemessagequeue.cpp" />
+    <ClCompile Include="glog_helper.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="timer.cpp" />
+    <ClCompile Include="timer_mem.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
