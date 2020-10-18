@@ -188,7 +188,12 @@ void OnTimer(TimerIdType timerId, void* pParam)
 	++OnTimerTriggered;
 	if (diff > 1000)
 	{
-		printf("RunningTimersCount:%d OnTimerTriggered:%llu\n", RunningTimersCount, OnTimerTriggered);
+		extern int UniqsTimerAllocCalled;
+		extern int UniqsTimerFreeCalled;
+		extern int UniqsTimerFreeCount;
+
+		printf("RunningTimersCount:%d OnTimerTriggered:%llu AllocCalled:%d FreeCalled:%d TimerFreeCount:%d\n"
+			, RunningTimersCount, OnTimerTriggered, UniqsTimerAllocCalled, UniqsTimerFreeCalled, UniqsTimerFreeCount);
 		lastTimeMS = currMS;
 	}
 #endif
