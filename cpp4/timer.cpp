@@ -119,7 +119,16 @@ static void AddTimer(TimerManager* pTimerManager, TimerNode* pTimer, TimerMsType
 		pszAddTimerSource[source], fromWheelIdx, fromSlotIdx, wheelIdx, slotIdx, int(negative), qwDueTime, qwExpires, pTimerManager->qwCurrentTimeMS);
 #endif
 	//printf("AddTimer qwExpires:%llu qwDueTime:%llu i:%llu pTimerManager->qwCurrentTimeMS:%llu\n", qwExpires, qwDueTime, i, pTimerManager->qwCurrentTimeMS);
-	pTimerManager->arrListTimer[wheelIdx][slotIdx].push_back(pTimer);
+	if (pTimerManager->arrListTimer[wheelIdx][slotIdx] == nullptr)
+	{
+		pTimerManager->arrListTimer[wheelIdx][slotIdx] = pTimer;
+		pTimer->pNext = nullptr;
+	}
+	else
+	{
+		pTimer->pNext = pTimerManager->arrListTimer[wheelIdx][slotIdx];
+		pTimerManager->arrListTimer[wheelIdx][slotIdx] = pTimer;
+	}
 }
 
 // 循环该slot里的所有节点，重新AddTimer到管理器中
@@ -131,10 +140,12 @@ static void CascadeTimer(TimerManager* pTimerManager, TimerMsType wheelIdx, Time
 #ifdef UNIQS_DEBUG_TIMER
 	printf("CascadeTimer begin wheelIdx:%llu slotIdx:%llu \n", wheelIdx, slotIdx);
 #endif
-	TimerNode* pTimer = nullptr;
-	for (auto it : pTimerManager->arrListTimer[wheelIdx][slotIdx])
+	TimerNode* pTimer = pTimerManager->arrListTimer[wheelIdx][slotIdx];
+	TimerNode* pNext = nullptr;
+	for (;pTimer != nullptr;pTimer = pNext)
 	{
-		pTimer = it;
+		pNext = pTimer->pNext;
+
 		if (pTimer->bRunning)
 		{
 #ifdef UNIQS_LOG_EVERYTHING
@@ -152,7 +163,7 @@ static void CascadeTimer(TimerManager* pTimerManager, TimerMsType wheelIdx, Time
 			FreeObj(pTimer);
 		}
 	}
-	pTimerManager->arrListTimer[wheelIdx][slotIdx].clear();
+	pTimerManager->arrListTimer[wheelIdx][slotIdx] = nullptr;
 }
 
 void TimerManager::Run()
@@ -172,9 +183,12 @@ void TimerManager::Run()
 			CascadeTimer(this, i + 1, idxTmp);
 		}
 
-		for (auto it : arrListTimer[0][idx])
+		TimerNode* pTimer = arrListTimer[0][idx];
+		TimerNode* pNext = nullptr;
+		for (;pTimer != nullptr;pTimer = pNext)
 		{
-			TimerNode* pTimer = it;
+			pNext = pTimer->pNext;
+
 			timerId = pTimer->qwTimerId;
 			if (pTimer->bRunning)
 			{
@@ -203,7 +217,7 @@ void TimerManager::Run()
 				FreeObj(pTimer);
 			}
 		}
-		arrListTimer[0][idx].clear();
+		arrListTimer[0][idx] = nullptr;
 
 		qwCurrentTimeMS++;
 	}
@@ -211,15 +225,20 @@ void TimerManager::Run()
 
 TimerManager* CreateTimerManager(void)
 {
-	TimerManager* pTimerMgr = new TimerManager();
-	if (pTimerMgr != NULL)
+	TimerManager* pTimerManager = new TimerManager();
+	if (pTimerManager != NULL)
 	{
-		pTimerMgr->qwCurrentTimeMS = UTimerGetCurrentTimeMS();
-		for (auto i = 0; i < TIMER_WHEEL_COUNT; i++)
+		for (auto wheelIdx = 0; wheelIdx < TIMER_WHEEL_COUNT; wheelIdx++)
 		{
+			for (auto slotIdx = 0; slotIdx < TIMER_SLOT_COUNT_PER_WHEEL; slotIdx++)
+			{
+				pTimerManager->arrListTimer[wheelIdx][slotIdx] = nullptr;
+			}
 		}
+
+		pTimerManager->qwCurrentTimeMS = UTimerGetCurrentTimeMS();
 	}
-	return pTimerMgr;
+	return pTimerManager;
 }
 
 void DestroyTimerManager(TimerManager* pTimerManager)
@@ -230,9 +249,13 @@ void DestroyTimerManager(TimerManager* pTimerManager)
 	{
 		for (auto slotIdx = 0; slotIdx < TIMER_SLOT_COUNT_PER_WHEEL; slotIdx++)
 		{
-			for (auto it : pTimerManager->arrListTimer[wheelIdx][slotIdx])
+			TimerNode* pTimer = pTimerManager->arrListTimer[wheelIdx][slotIdx];
+			TimerNode* pNext = nullptr;
+			for (;pTimer != nullptr;pTimer = pNext)
 			{
-				FreeObj(it);
+				pNext = pTimer->pNext;
+
+				FreeObj(pTimer);
 			}
 		}
 	}

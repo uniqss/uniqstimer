@@ -35,6 +35,7 @@ extern TimerMsType DebugDiffTimeMs;
 class TimerNode
 {
 public:
+	TimerNode* pNext;
 	TimerIdType qwTimerId;
 	TimerMsType qwExpires; // 
 	TimerMsType qwPeriod;
@@ -48,7 +49,7 @@ class TimerManager
 public:
 	TimerMsType qwCurrentTimeMS; // current time ms
 	std::unordered_map<TimerIdType, TimerNode*> pTimers;
-	std::list<TimerNode*> arrListTimer[TIMER_WHEEL_COUNT][TIMER_SLOT_COUNT_PER_WHEEL];
+	TimerNode* arrListTimer[TIMER_WHEEL_COUNT][TIMER_SLOT_COUNT_PER_WHEEL];
 public:
 	void Run();
 };
