@@ -7,7 +7,7 @@
 #include<unordered_set>
 #include<stdint.h>
 
-#if 1
+#if 0
 #define UNIQS_LOG_EVERYTHING
 #endif
 
@@ -20,13 +20,9 @@
 #define TimerIdType int64_t
 
 #define TIMER_BITS_PER_WHEEL 8
+#define TIMER_SLOT_COUNT_PER_WHEEL 1 << 8
 #define TIMER_WHEEL_COUNT 5
-#define TIMER_SLOT_COUNT_PER_WHEEL (1 << 8)
 #define TIMER_MASK ((1 << TIMER_BITS_PER_WHEEL) - 1)
-#define TIMER_WHEEL_EXECUTING_MAX (1 << 8)
-
-const int ETimerState_Killed = 0;
-const int ETimerState_Running = 1;
 
 #if 0
 #define UNIQS_DEBUG_TIMER
@@ -44,9 +40,7 @@ public:
 	TimerMsType qwPeriod;
 	void (*timerFn)(TimerIdType, void*);
 	void* pParam;
-	uint8_t state;
-	uint8_t wheelIdx;
-	int8_t slotIdx;
+	bool bRunning;
 };
 
 class TimerManager
@@ -54,7 +48,7 @@ class TimerManager
 public:
 	TimerMsType qwCurrentTimeMS; // current time ms
 	std::unordered_map<TimerIdType, TimerNode*> pTimers;
-	std::unordered_set<TimerNode*> arrListTimer[TIMER_WHEEL_COUNT][TIMER_SLOT_COUNT_PER_WHEEL];
+	std::list<TimerNode*> arrListTimer[TIMER_WHEEL_COUNT][TIMER_SLOT_COUNT_PER_WHEEL];
 public:
 	void Run();
 };

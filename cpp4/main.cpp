@@ -14,11 +14,10 @@ bool bWorking = true;
 bool bTerminateOk = false;
 
 TimerIdType timerIdMotherStart = 1000000;
-TimerIdType timerIdMotherCount = 100;
+TimerIdType timerIdMotherCount = 1000;
 TimerIdType timerIdMotherStop = timerIdMotherStart + timerIdMotherCount;
 TimerIdType timerIdRandStart = 10000000;
 TimerIdType timerIdRandCount = 1000000;
-TimerIdType timerIdRandStop = timerIdRandStart + timerIdRandCount;
 
 class TestRandTimerInfo
 {
@@ -59,9 +58,9 @@ void OnTimer(TimerIdType timerId, void* pParam)
 	LOG(INFO) << "OnTimer timerId:" << timerId << " pszStr:" << pszStr << " currMS:" << currMS;
 #endif
 
+#if 0
 	auto ms = currMS % 1000;
 	auto s = currMS / 1000;
-#if 0
 	printf("OnTimer. timerId:%llu s:%llu ms:%llu str: %s\n", timerId, s, ms, pszStr);
 #endif
 	bool bOk = false;
@@ -137,7 +136,7 @@ void OnTimer(TimerIdType timerId, void* pParam)
 	}
 #endif
 #if 1
-	static int64_t RunningTimersCount = 100;
+	static int RunningTimersCount = 100;
 	if (timerId >= timerIdMotherStart && timerId <= timerIdMotherStop)
 	{
 		// kill create rand
@@ -230,12 +229,12 @@ void OnTimer(TimerIdType timerId, void* pParam)
 
 #if 1
 	static TimerMsType lastTimeMS = UTimerGetCurrentTimeMS();
-	TimerMsType __diff = currMS - lastTimeMS;
+	TimerMsType diff = currMS - lastTimeMS;
 	static TimerMsType OnTimerTriggered = 0;
 	++OnTimerTriggered;
-	if (__diff > 3000)
+	if (diff > 1000)
 	{
-		printf("RunningTimersCount:%llu OnTimerTriggered:%llu\n", RunningTimersCount, OnTimerTriggered);
+		printf("RunningTimersCount:%d OnTimerTriggered:%llu\n", RunningTimersCount, OnTimerTriggered);
 		lastTimeMS = currMS;
 	}
 #endif
@@ -261,8 +260,8 @@ void OnTimer(TimerIdType timerId, void* pParam)
 
 		shouldTimeMS += rInfo.dueTime * rInfo.triggeredCount + rInfo.period * rInfo.triggeredCountRepeate;
 
-		TimerMsType diff = shouldTimeMS > currMS ? shouldTimeMS - currMS : currMS - shouldTimeMS;
-		if (diff > 300)
+		TimerMsType __diff = shouldTimeMS > currMS ? shouldTimeMS - currMS : currMS - shouldTimeMS;
+		if (__diff > 100)
 		{
 			OnTimerError("timer time check error");
 		}
@@ -310,9 +309,6 @@ void LogicThread()
 	*/
 #endif
 
-#if 0
-	CreateTimer(pMgr, 100, OnTimer, (void*)"1", 1, 1);
-#endif
 #if 0
 	CreateTimer(pMgr, 100, OnTimer, (void*)"100", 100, 100);
 #endif
