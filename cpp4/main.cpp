@@ -143,10 +143,17 @@ void OnTimer(TimerIdType timerId, void* pParam)
 		auto randTimerIdIdx = (rand() % timerIdRandCount);
 		auto randTimerId = randTimerIdIdx + timerIdRandStart;
 
-		auto __randKill = rand() % 1000;
+		TimerIdType __randKill = rand() % 10000;
+#if 1
+		// ×îµÍ20% ×î¸ß85%
+		TimerIdType __randKillPercent = 2000 + ((TimerIdType)6500 * RunningTimersCount / timerIdRandCount);
+#else
+		TimerIdType __randKillPercent = 5000;
+#endif
+		timerIdRandCount;
 		auto& rInfo = arrTestRandTimerInfos[randTimerIdIdx];
 		auto& rState = rInfo.state;
-		if (RunningTimersCount > 100 && __randKill < 500)
+		if (RunningTimersCount > 100 && __randKill < __randKillPercent)
 		{
 #ifdef UNIQS_LOG_EVERYTHING
 			LOG(INFO) << "OnTimer rand kill timerId:" << timerId << " rState:" << rState << " randTimerId:" << randTimerId << " currMS:" << currMS;
@@ -335,7 +342,7 @@ int main(int argc, const char** argv)
 #if 1
 	DebugDiffTimeMs = UTimerGetCurrentTimeMS();
 	//DebugDiffTimeMs -= 100 + 100 * (1 << TIMER_BITS_PER_WHEEL) + 100 * (1 << (2 * TIMER_BITS_PER_WHEEL)) + 100 * (1 << (3 * TIMER_BITS_PER_WHEEL));
-	DebugDiffTimeMs -= 100  + 100 * (1 << TIMER_BITS_PER_WHEEL);
+	DebugDiffTimeMs -= 100 + 100 * (1 << TIMER_BITS_PER_WHEEL);
 #endif
 #endif
 	auto currMS = UTimerGetCurrentTimeMS();
