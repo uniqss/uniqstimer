@@ -52,47 +52,41 @@ static void AddTimer(TimerManager* pTimerManager, TimerNode* pTimer, TimerMsType
 	LOG(INFO) << "AddTimer timerId:"<<pTimer->qwTimerId<<"fromWheelIdx:" << fromWheelIdx << " fromSlotIdx:" << fromSlotIdx << " source:" << pszAddTimerSource[source];
 #endif
 
-	TimerMsType i = 0, qwDueTime, qwExpires;
 	TimerMsType wheelIdx = 0;
 	TimerMsType slotIdx = 0;
 
-	qwExpires = pTimer->qwExpires;
-	qwDueTime = qwExpires - pTimerManager->qwCurrentTimeMS;
+	TimerMsType qwExpires = pTimer->qwExpires;
+	TimerMsType qwDueTime = qwExpires - pTimerManager->qwCurrentTimeMS;
 
 #if defined( UNIQS_DEBUG_TIMER ) || defined (UNIQS_LOG_EVERYTHING)
 	bool negative = false;
 #endif
 
 	if (false) {}
-	else if (qwDueTime < TimerIdType(1) << (TIMER_BITS_PER_WHEEL * (0 + 1)))
+	else if (qwDueTime < TimerMsType(1) << (TIMER_BITS_PER_WHEEL * (0 + 1)))
 	{
-		i = (qwExpires >> (TIMER_BITS_PER_WHEEL * 0)) & TIMER_MASK;
+		slotIdx = (qwExpires >> (TIMER_BITS_PER_WHEEL * 0)) & TIMER_MASK;
 		wheelIdx = 0;
-		slotIdx = i;
 	}
-	else if (qwDueTime < TimerIdType(1) << (TIMER_BITS_PER_WHEEL * (1 + 1)))
+	else if (qwDueTime < TimerMsType(1) << (TIMER_BITS_PER_WHEEL * (1 + 1)))
 	{
-		i = (qwExpires >> (TIMER_BITS_PER_WHEEL * 1)) & TIMER_MASK;
+		slotIdx = (qwExpires >> (TIMER_BITS_PER_WHEEL * 1)) & TIMER_MASK;
 		wheelIdx = 1;
-		slotIdx = i;
 	}
-	else if (qwDueTime < TimerIdType(1) << (TIMER_BITS_PER_WHEEL * (2 + 1)))
+	else if (qwDueTime < TimerMsType(1) << (TIMER_BITS_PER_WHEEL * (2 + 1)))
 	{
-		i = (qwExpires >> (TIMER_BITS_PER_WHEEL * 2)) & TIMER_MASK;
+		slotIdx = (qwExpires >> (TIMER_BITS_PER_WHEEL * 2)) & TIMER_MASK;
 		wheelIdx = 2;
-		slotIdx = i;
 	}
-	else if (qwDueTime < TimerIdType(1) << (TIMER_BITS_PER_WHEEL * (3 + 1)))
+	else if (qwDueTime < TimerMsType(1) << (TIMER_BITS_PER_WHEEL * (3 + 1)))
 	{
-		i = (qwExpires >> (TIMER_BITS_PER_WHEEL * 3)) & TIMER_MASK;
+		slotIdx = (qwExpires >> (TIMER_BITS_PER_WHEEL * 3)) & TIMER_MASK;
 		wheelIdx = 3;
-		slotIdx = i;
 	}
-	else if (qwDueTime < TimerIdType(1) << (TIMER_BITS_PER_WHEEL * (4 + 1)))
+	else if (qwDueTime < TimerMsType(1) << (TIMER_BITS_PER_WHEEL * (4 + 1)))
 	{
-		i = (qwExpires >> (TIMER_BITS_PER_WHEEL * 4)) & TIMER_MASK;
+		slotIdx = (qwExpires >> (TIMER_BITS_PER_WHEEL * 4)) & TIMER_MASK;
 		wheelIdx = 4;
-		slotIdx = i;
 	}
 	else if (qwDueTime < 0)
 	{
@@ -168,22 +162,22 @@ static void CascadeTimer(TimerManager* pTimerManager, TimerMsType wheelIdx, Time
 
 void TimerManager::Run()
 {
-	TimerMsType idx = 0, idxTmp = 0, currTimeMS;
+	TimerMsType idxExecutingSlotIdx = 0, idxNextWheelSlotIdx = 0;
 
-	currTimeMS = UTimerGetCurrentTimeMS();
+	auto currTimeMS = UTimerGetCurrentTimeMS();
 	TimerIdType timerId = 0;
-	while (currTimeMS >= qwCurrentTimeMS)
+	while (currTimeMS >= this->qwCurrentTimeMS)
 	{
-		idx = qwCurrentTimeMS & TIMER_MASK;
+		idxExecutingSlotIdx = this->qwCurrentTimeMS & TIMER_MASK;
 
-		idxTmp = idx;
-		for (TimerMsType i = 0; i < 4 && idxTmp == 0; i++)
+		idxNextWheelSlotIdx = idxExecutingSlotIdx;
+		for (TimerMsType i = 0; i < 4 && idxNextWheelSlotIdx == 0; i++)
 		{
-			idxTmp = (qwCurrentTimeMS >> ((i + 1) * TIMER_BITS_PER_WHEEL)) & TIMER_MASK;
-			CascadeTimer(this, i + 1, idxTmp);
+			idxNextWheelSlotIdx = (this->qwCurrentTimeMS >> ((i + 1) * TIMER_BITS_PER_WHEEL)) & TIMER_MASK;
+			CascadeTimer(this, i + 1, idxNextWheelSlotIdx);
 		}
 
-		TimerNode* pTimer = arrListTimer[0][idx];
+		TimerNode* pTimer = arrListTimer[0][idxExecutingSlotIdx];
 		TimerNode* pNext = nullptr;
 		for (;pTimer != nullptr;pTimer = pNext)
 		{
@@ -195,8 +189,8 @@ void TimerManager::Run()
 				pTimer->timerFn(pTimer->qwTimerId, pTimer->pParam);
 				if (pTimer->qwPeriod != 0)
 				{
-					pTimer->qwExpires = qwCurrentTimeMS + pTimer->qwPeriod;
-					AddTimer(this, pTimer, 0, idx, EAddTimerSource_TimeoutReadd);
+					pTimer->qwExpires = this->qwCurrentTimeMS + pTimer->qwPeriod;
+					AddTimer(this, pTimer, 0, idxExecutingSlotIdx, EAddTimerSource_TimeoutReadd);
 				}
 				else
 				{
@@ -217,9 +211,9 @@ void TimerManager::Run()
 				FreeObj(pTimer);
 			}
 		}
-		arrListTimer[0][idx] = nullptr;
+		arrListTimer[0][idxExecutingSlotIdx] = nullptr;
 
-		qwCurrentTimeMS++;
+		this->qwCurrentTimeMS++;
 	}
 }
 
@@ -264,7 +258,6 @@ void DestroyTimerManager(TimerManager* pTimerManager)
 
 bool CreateTimer(TimerManager* pTimerManager, TimerIdType timerId, void(*timerFn)(TimerIdType, void*), void* pParam, TimerMsType qwDueTime, TimerMsType qwPeriod)
 {
-	TimerNode* pTimer = NULL;
 	if (NULL == timerFn || NULL == pTimerManager)
 		return false;
 
@@ -290,7 +283,7 @@ bool CreateTimer(TimerManager* pTimerManager, TimerIdType timerId, void(*timerFn
 		return false;
 	}
 
-	pTimer = AllocObj();
+	TimerNode* pTimer = AllocObj();
 	if (pTimer == nullptr)
 	{
 		OnTimerError("CreateTimer AllocObj failed.");
@@ -313,7 +306,6 @@ bool CreateTimer(TimerManager* pTimerManager, TimerIdType timerId, void(*timerFn
 
 bool KillTimer(TimerManager* pTimerManager, TimerIdType timerId)
 {
-	TimerNode* pTimer;
 	if (pTimerManager == nullptr)
 	{
 		return false;
@@ -328,7 +320,7 @@ bool KillTimer(TimerManager* pTimerManager, TimerIdType timerId)
 		return false;
 	}
 
-	pTimer = it->second;
+	TimerNode* pTimer = it->second;
 	if (!pTimer->bRunning)
 	{
 		return false;
