@@ -13,9 +13,11 @@ TimerManager* pMgr;
 bool bWorking = true;
 bool bTerminateOk = false;
 
+TimerIdType timerIdMotherMother = 1;
 TimerIdType timerIdMotherStart = 1000000;
-TimerIdType timerIdMotherCount = 1000;
+TimerIdType timerIdMotherCount = 5000;
 TimerIdType timerIdMotherStop = timerIdMotherStart + timerIdMotherCount;
+TimerIdType timerIdMotherCurr = timerIdMotherStart;
 TimerIdType timerIdRandStart = 10000000;
 TimerIdType timerIdRandCount = 1000000;
 
@@ -65,77 +67,22 @@ void OnTimer(TimerIdType timerId, void* pParam)
 #endif
 	bool bOk = false;
 
-	auto randKill = rand() % 1000;
-	if (randKill < 500)
+#if 1
+	if (timerId == timerIdMotherMother)
 	{
-#if 0
-		bOk = KillTimer(pMgr, timerId);
-		if (!bOk)
+		if (timerIdMotherCurr < timerIdMotherStop)
 		{
-			printf("OnTimer KillTimer failed. timerId:%llu\n", timerId);
-		}
-		bOk = KillTimer(pMgr, timerId);
-		if (bOk)
-		{
-			printf("OnTimer KillTimer failed. timerId:%llu\n", timerId);
-		}
-		bOk = KillTimer(pMgr, timerId);
-		if (bOk)
-		{
-			printf("OnTimer KillTimer failed. timerId:%llu\n", timerId);
-		}
-#endif
-#if 0
-		bOk = KillTimer(pMgr, timerId);
-		if (!bOk)
-		{
-			printf("OnTimer KillTimer failed. timerId:%llu\n", timerId);
-		}
-		auto randCreate = rand() % 1000;
-		if (randCreate < 750)
-		{
-			bOk = CreateTimer(pMgr, timerId, OnTimer, (void*)"this is created by OnTimer", 300, 300);
-			if (!bOk)
+			for (size_t i = 0; i < 100; i++)
 			{
-				printf("OnTimer KillTimer failed. timerId:%llu\n", timerId);
+				CreateTimer(pMgr, timerIdMotherCurr, OnTimer, (void*)"mother", 500, 500);
+				timerIdMotherCurr++;
 			}
-		}
-#endif
-	}
-#if 0
-	if (timerId < timerIdMotherStart)
-	{
-		bOk = KillTimer(pMgr, timerId);
-		if (!bOk)
-		{
-			printf("OnTimer KillTimer failed. timerId:%llu\n", timerId);
-		}
-		TimerMsType t1 = 0;
-		TimerMsType t2 = 0;
-		// 0-255 256-65536 65536-16777216
-		if (timerId % 3 == 0)
-		{
-			t1 = rand() % 256;
-			t2 = rand() % 256;
-		}
-		else if (timerId % 3 == 1)
-		{
-			t1 = rand() % 65536;
-			t2 = rand() % 65536;
 		}
 		else
 		{
-			t1 = rand() % 131072;
-			t2 = rand() % 131072;
-		}
-		bOk = CreateTimer(pMgr, timerId, OnTimer, (void*)"", t1, t2);
-		if (!bOk)
-		{
-			printf("OnTimer KillTimer failed. timerId:%llu\n", timerId);
+			KillTimer(pMgr, timerIdMotherMother);
 		}
 	}
-#endif
-#if 1
 	static int RunningTimersCount = 100;
 	if (timerId >= timerIdMotherStart && timerId <= timerIdMotherStop)
 	{
@@ -293,9 +240,12 @@ void LogicThread()
 	}
 #endif
 #if 1
+	CreateTimer(pMgr, timerIdMotherMother, OnTimer, (void*)"mother", 100, 100);
+#endif
+#if 0
 	for (TimerIdType i = timerIdMotherStart; i <= timerIdMotherStop; i++)
 	{
-		CreateTimer(pMgr, i, OnTimer, (void*)"test", 1000, 1000);
+		CreateTimer(pMgr, i, OnTimer, (void*)"mother", 1000, 1000);
 	}
 #endif
 #if 1
