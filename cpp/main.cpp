@@ -19,7 +19,7 @@ TimerIdType timerIdMotherCount = 5000;
 TimerIdType timerIdMotherStop = timerIdMotherStart + timerIdMotherCount;
 TimerIdType timerIdMotherCurr = timerIdMotherStart;
 TimerIdType timerIdRandStart = 10000000;
-TimerIdType timerIdRandCount = 1000000;
+TimerIdType timerIdRandCount = 50000000;
 
 class TestRandTimerInfo
 {
