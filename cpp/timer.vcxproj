@@ -202,13 +202,17 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="fake_rand.h" />
     <ClInclude Include="glog_helper.h" />
+    <ClInclude Include="main.h" />
     <ClInclude Include="timer.h" />
     <ClInclude Include="timer_mem.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="fake_rand.cpp" />
     <ClCompile Include="glog_helper.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="main_logicthread.cpp" />
     <ClCompile Include="timer.cpp" />
     <ClCompile Include="timer_mem.cpp" />
   </ItemGroup>

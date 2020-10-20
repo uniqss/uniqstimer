@@ -39,7 +39,7 @@ public:
 	TimerIdType qwTimerId;
 	TimerMsType qwExpires; // 
 	TimerMsType qwPeriod;
-	void (*timerFn)(TimerIdType, void*);
+	void (*timerFn)(TimerIdType, void*, TimerMsType currTimeMS);
 	void* pParam;
 	bool bRunning;
 };
@@ -62,6 +62,6 @@ TimerManager* CreateTimerManager(void);
 void DestroyTimerManager(TimerManager* pTimerManager);
 
 // qwDueTime: first timeout   qwPeriod: then periodic timeout.(0: one shot timer)
-bool CreateTimer(TimerManager* pTimerManager, TimerIdType timerId, void (*timerFn)(TimerIdType, void*), void* pParam, TimerMsType qwDueTime, TimerMsType qwPeriod);
+bool CreateTimer(TimerManager* pTimerManager, TimerIdType timerId, void (*timerFn)(TimerIdType, void*, TimerMsType currTimeMS), void* pParam, TimerMsType qwDueTime, TimerMsType qwPeriod);
 
 bool KillTimer(TimerManager* pTimerManager, TimerIdType timerId);

@@ -24,6 +24,12 @@
     <ClInclude Include="glog_helper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="fake_rand.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="main.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -36,6 +42,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="glog_helper.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="fake_rand.cpp">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="main_logicthread.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

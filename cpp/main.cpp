@@ -6,20 +6,35 @@
 
 #include<thread>
 
+#include "fake_rand.h"
+
 #include "glog_helper.h"
+#include "main.h"
+
+
+#if defined(WIN32)||defined(WINDOWS)||defined(_WIN32)
+#ifdef _DEBUG
 #pragma comment(lib, "glogd.lib")
+#else
+#pragma comment(lib, "glog.lib")
+#endif
+#else
+#endif
+
+TimerIdType timerIdMotherCurr = timerIdMotherStart;
 
 TimerManager* pMgr;
 bool bWorking = true;
 bool bTerminateOk = false;
+int RunExceed1MSCount = 0;
+TimerMsType RunTotalUS = 0;
+TimerMsType RunCount = 0;
+TimerMsType RunAverageUS = 0;
+TimerMsType OnTimerTotalUS = 0;
+TimerMsType OnTimerCount = 0;
+TimerMsType OnTimerAverageUS = 0;
+uint64_t FrameOnTimerCalled = 0;
 
-TimerIdType timerIdMotherMother = 1;
-TimerIdType timerIdMotherStart = 1000000;
-TimerIdType timerIdMotherCount = 5000;
-TimerIdType timerIdMotherStop = timerIdMotherStart + timerIdMotherCount;
-TimerIdType timerIdMotherCurr = timerIdMotherStart;
-TimerIdType timerIdRandStart = 10000000;
-TimerIdType timerIdRandCount = 50000000;
 
 class TestRandTimerInfo
 {
@@ -51,10 +66,12 @@ public:
 
 std::vector<TestRandTimerInfo> arrTestRandTimerInfos;
 
-void OnTimer(TimerIdType timerId, void* pParam)
+void OnTimer(TimerIdType timerId, void* pParam, TimerMsType currMS)
 {
 	const char* pszStr = (const char*)pParam;
-	auto currMS = UTimerGetCurrentTimeMS();
+	++FrameOnTimerCalled;
+	++OnTimerCount;
+	TimerMsType startUS = UTimerGetCurrentTimeUS();
 
 #ifdef UNIQS_LOG_EVERYTHING
 	LOG(INFO) << "OnTimer timerId:" << timerId << " pszStr:" << pszStr << " currMS:" << currMS;
@@ -87,10 +104,10 @@ void OnTimer(TimerIdType timerId, void* pParam)
 	if (timerId >= timerIdMotherStart && timerId <= timerIdMotherStop)
 	{
 		// kill create rand
-		auto randTimerIdIdx = (rand() % timerIdRandCount);
+		auto randTimerIdIdx = (FakeRand() % timerIdRandCount);
 		auto randTimerId = randTimerIdIdx + timerIdRandStart;
 
-		TimerIdType __randKill = rand() % 10000;
+		TimerIdType __randKill = FakeRand() % 10000;
 #if 1
 		// 最低20% 最高85%
 		TimerIdType __randKillPercent = 2000 + ((TimerIdType)6500 * RunningTimersCount / timerIdRandCount);
@@ -137,12 +154,14 @@ void OnTimer(TimerIdType timerId, void* pParam)
 				rState = 2;
 			}
 		}
-		TimerIdType randCreate = rand() % 10000;
+		TimerIdType randCreate = FakeRand() % 10000;
 		if (RunningTimersCount < timerIdRandCount && randCreate < 8000)
 		{
-			auto randRepeate = (rand() % 2) > 0;
-			TimerMsType t1 = ((rand() % (131072 + 6)) + 1);
-			TimerMsType t2 = randRepeate ? ((rand() % (131072 + 6)) + 1) : 0;
+			auto randRepeate = (FakeRand() % 2) > 0;
+
+			// 性能测试，避免创建大量小于128毫秒的定时器，128-256落到第一个轮的概率还是很大。
+			TimerMsType t1 = ((FakeRand() % (131072 + 6)) + 128);
+			TimerMsType t2 = randRepeate ? ((FakeRand() % (131072 + 6)) + 128) : 0;
 
 #ifdef UNIQS_LOG_EVERYTHING
 			LOG(INFO) << "OnTimer rand create timerId:" << timerId << " rState:" << rState << " randTimerId:" << randTimerId <<
@@ -191,9 +210,20 @@ void OnTimer(TimerIdType timerId, void* pParam)
 		extern int UniqsTimerAllocCalled;
 		extern int UniqsTimerFreeCalled;
 		extern int UniqsTimerFreeCount;
+		RunAverageUS = RunTotalUS / RunCount;
+		OnTimerAverageUS = OnTimerTotalUS / OnTimerCount;
+		auto percent = (RunTotalUS - OnTimerTotalUS) * 100 / RunTotalUS;
+		auto av = OnTimerCount / RunCount;
 
-		printf("RunningTimersCount:%d OnTimerTriggered:%llu AllocCalled:%d FreeCalled:%d TimerFreeCount:%d\n"
-			, RunningTimersCount, OnTimerTriggered, UniqsTimerAllocCalled, UniqsTimerFreeCalled, UniqsTimerFreeCount);
+#if 0
+		printf("Timers:%d FOT:%llu OnTimerTriggered:%llu Alloced:%d Freeed:%d FreeM:%d Over1MS:%d RunAvUS:%llu OnTimer:%llu|%llu|%llu|%llu\n"
+			, RunningTimersCount, FrameOnTimerCalled, OnTimerTriggered, UniqsTimerAllocCalled, UniqsTimerFreeCalled, UniqsTimerFreeCount, RunExceed1MSCount, RunAverageUS
+			, OnTimerTotalUS, OnTimerCount, OnTimerAverageUS, percent);
+#else
+		printf("Timers:%d Run:%llu|%llu|%llu OnTimer:%llu|%llu|%llu OnTimer/Run:%llu\%% OnTimerCount/RunCount:%llu\n",
+			RunningTimersCount, RunTotalUS, RunCount, RunAverageUS, OnTimerTotalUS, OnTimerCount, OnTimerAverageUS, percent, av);
+#endif
+
 		lastTimeMS = currMS;
 	}
 #endif
@@ -231,60 +261,25 @@ void OnTimer(TimerIdType timerId, void* pParam)
 		}
 	}
 #endif
+	TimerMsType endUS = UTimerGetCurrentTimeUS();
+	OnTimerTotalUS += endUS - startUS;
 }
 
-void LogicThread()
+TimerMsType UTimerGetCurrentTimeUS(void)
 {
-	srand((unsigned)UTimerGetCurrentTimeMS());
-	//CreateTimer(pMgr, 1, OnTimer, (void*)"test", 1, 1);
-#if 0
-	for (size_t i = 1; i <= 60000; i++)
-	{
-		auto t = i % 66666 + 1;
-		CreateTimer(pMgr, i, OnTimer, (void*)"test", t, t);
-	}
-#endif
 #if 1
-	CreateTimer(pMgr, timerIdMotherMother, OnTimer, (void*)"mother", 100, 100);
+	struct timespec ts;
+	timespec_get(&ts, TIME_UTC);
+	//char buff[100];
+	//strftime(buff, sizeof buff, "%D %T", gmtime(&ts.tv_sec));
+	//printf("Current time: %s.%09ld UTC\n", buff, ts.tv_nsec);
+	TimerMsType ret = (TimerMsType)ts.tv_sec * 1000000000 + ts.tv_nsec;
+	return ret;
+#else
+	auto time_now = std::chrono::system_clock::now();
+	auto duration_in_us = std::chrono::duration_cast<std::chrono::nanoseconds>(time_now.time_since_epoch());
+	return (TimerMsType)duration_in_us.count();
 #endif
-#if 0
-	for (TimerIdType i = timerIdMotherStart; i <= timerIdMotherStop; i++)
-	{
-		CreateTimer(pMgr, i, OnTimer, (void*)"mother", 1000, 1000);
-	}
-#endif
-#if 1
-	/*
-	CreateTimer(pMgr, 1001, OnTimer, (void*)"this is first 100 ms then 100 ms repeated timer", 100, 100);
-	CreateTimer(pMgr, 2001, OnTimer, (void*)"this is first 100 ms then 1000 ms repeated timer", 100, 1000);
-	CreateTimer(pMgr, 2001, OnTimer, (void*)"this is first 300 ms then 1000 ms repeated timer", 300, 1000);
-	*/
-	/*
-	CreateTimer(pMgr, 1002, OnTimer, (void*)"this is first 500 ms then 0 ms timer", 500, 0);
-	CreateTimer(pMgr, 2002, OnTimer, (void*)"this is first 500 ms then 100 ms timer", 500, 100);
-	CreateTimer(pMgr, 1003, OnTimer, (void*)"this is first 600 ms then 0 ms timer", 600, 0);
-	CreateTimer(pMgr, 2003, OnTimer, (void*)"this is first 600 ms then 100 ms timer", 600, 100);
-	CreateTimer(pMgr, 1004, OnTimer, (void*)"this is first 2000 ms then 1000 ms repeated timer", 2000, 1000);
-	CreateTimer(pMgr, 2004, OnTimer, (void*)"this is first 3000 ms then 0 ms timer", 3000, 0);
-	CreateTimer(pMgr, 1005, OnTimer, (void*)"this is first 0 ms then 4000 ms timer", 0, 4000);
-	CreateTimer(pMgr, 2005, OnTimer, (void*)"this is first 0 ms then 4000 ms timer", 0, 4000);
-	*/
-#endif
-
-#if 0
-	CreateTimer(pMgr, 100, OnTimer, (void*)"100", 100, 100);
-#endif
-#if 0
-	CreateTimer(pMgr, 300, OnTimer, (void*)"300", 300, 300);
-	CreateTimer(pMgr, 600, OnTimer, (void*)"600", 600, 600);
-#endif
-
-	while (bWorking)
-	{
-		pMgr->Run();
-		std::this_thread::sleep_for(std::chrono::microseconds(500));
-	}
-	bTerminateOk = true;
 }
 
 #define TIMERCOUNT 512

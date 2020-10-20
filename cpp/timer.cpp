@@ -14,12 +14,17 @@ TimerMsType DebugDiffTimeMs = 0;
 
 TimerMsType UTimerGetCurrentTimeMS(void)
 {
+#if 0
 	auto time_now = std::chrono::system_clock::now();
 	auto duration_in_ms = std::chrono::duration_cast<std::chrono::milliseconds>(time_now.time_since_epoch());
 #ifdef UNIQS_DEBUG_TIMER
 	return (TimerMsType)duration_in_ms.count() - DebugDiffTimeMs;
 #else
 	return (TimerMsType)duration_in_ms.count();
+#endif
+#else
+#include <time.h>
+	return clock();
 #endif
 }
 
@@ -186,7 +191,7 @@ void TimerManager::Run()
 			timerId = pTimer->qwTimerId;
 			if (pTimer->bRunning)
 			{
-				pTimer->timerFn(pTimer->qwTimerId, pTimer->pParam);
+				pTimer->timerFn(pTimer->qwTimerId, pTimer->pParam, this->qwCurrentTimeMS);
 				if (pTimer->qwPeriod != 0)
 				{
 					pTimer->qwExpires = this->qwCurrentTimeMS + pTimer->qwPeriod;
@@ -256,7 +261,7 @@ void DestroyTimerManager(TimerManager* pTimerManager)
 	delete pTimerManager;
 }
 
-bool CreateTimer(TimerManager* pTimerManager, TimerIdType timerId, void(*timerFn)(TimerIdType, void*), void* pParam, TimerMsType qwDueTime, TimerMsType qwPeriod)
+bool CreateTimer(TimerManager* pTimerManager, TimerIdType timerId, void(*timerFn)(TimerIdType, void*, TimerMsType currTimeMS), void* pParam, TimerMsType qwDueTime, TimerMsType qwPeriod)
 {
 	if (NULL == timerFn || NULL == pTimerManager)
 		return false;
