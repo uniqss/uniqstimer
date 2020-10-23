@@ -72,6 +72,7 @@ void OnTimer(TimerIdType timerId, void* pParam, TimerMsType currMS)
 	++FrameOnTimerCalled;
 	++OnTimerCount;
 	TimerMsType startUS = UTimerGetCurrentTimeUS();
+	currMS = UTimerGetCurrentTimeMS();
 
 #ifdef UNIQS_LOG_EVERYTHING
 	LOG(INFO) << "OnTimer timerId:" << timerId << " pszStr:" << pszStr << " currMS:" << currMS;
@@ -257,7 +258,7 @@ void OnTimer(TimerIdType timerId, void* pParam, TimerMsType currMS)
 		shouldTimeMS += rInfo.dueTime * rInfo.triggeredCount + rInfo.period * rInfo.triggeredCountRepeate;
 
 		TimerMsType __diff = shouldTimeMS > currMS ? shouldTimeMS - currMS : currMS - shouldTimeMS;
-		if (__diff > 100)
+		if (__diff > 1000)
 		{
 			OnTimerError("timer time check error");
 		}
