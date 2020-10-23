@@ -1,6 +1,7 @@
 #pragma once
 
-#include "Timer.h"
+#include "timer.h"
+#include "timerIII.h"
 
 const TimerIdType timerIdMotherMother = 1;
 const TimerIdType timerIdMotherStart = 1000000;
@@ -8,11 +9,13 @@ const TimerIdType timerIdMotherCount = 5000;
 const TimerIdType timerIdMotherStop = timerIdMotherStart + timerIdMotherCount;
 
 const TimerIdType timerIdRandStart = 10000000;
-const TimerIdType timerIdRandCount = 800000;
+const TimerIdType timerIdRandCount = 100000;
 
 extern TimerIdType timerIdMotherCurr;
 
 extern TimerManager* pMgr;
+extern TimerManagerIII* pMgrIII;
+
 extern bool bWorking;
 extern bool bTerminateOk;
 extern int RunExceed1MSCount;
@@ -25,6 +28,7 @@ extern TimerMsType OnTimerAverageUS;
 extern uint64_t FrameOnTimerCalled;
 
 
-void OnTimer(TimerIdType timerId, void* pParam, TimerMsType currMS);
+void OnTimer(TimerIdType timerId, void* pParam);
+void OnTimerIII(TimerIdTypeIII timerId, void* pParam);
 void LogicThread();
 TimerMsType UTimerGetCurrentTimeUS(void);

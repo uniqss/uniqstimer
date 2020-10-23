@@ -11,6 +11,8 @@
 #include "glog_helper.h"
 #include "main.h"
 
+#include "timer_helper.h"
+
 
 #if defined(WIN32)||defined(WINDOWS)||defined(_WIN32)
 #ifdef _DEBUG
@@ -24,6 +26,7 @@
 TimerIdType timerIdMotherCurr = timerIdMotherStart;
 
 TimerManager* pMgr;
+TimerManagerIII* pMgrIII;
 bool bWorking = true;
 bool bTerminateOk = false;
 int RunExceed1MSCount = 0;
@@ -66,13 +69,13 @@ public:
 
 std::vector<TestRandTimerInfo> arrTestRandTimerInfos;
 
-void OnTimer(TimerIdType timerId, void* pParam, TimerMsType currMS)
+void OnTimer(TimerIdType timerId, void* pParam)
 {
 	const char* pszStr = (const char*)pParam;
 	++FrameOnTimerCalled;
 	++OnTimerCount;
 	TimerMsType startUS = UTimerGetCurrentTimeUS();
-	currMS = UTimerGetCurrentTimeMS();
+	TimerMsType currMS = UTimerGetCurrentTimeMS();
 
 #ifdef UNIQS_LOG_EVERYTHING
 	LOG(INFO) << "OnTimer timerId:" << timerId << " pszStr:" << pszStr << " currMS:" << currMS;
@@ -227,7 +230,8 @@ void OnTimer(TimerIdType timerId, void* pParam, TimerMsType currMS)
 		printf("Timers:%d FOT:%llu OnTimerTriggered:%llu Alloced:%d Freeed:%d FreeM:%d Over1MS:%d RunAvUS:%llu OnTimer:%llu|%llu|%llu|%llu\n"
 			, RunningTimersCount, FrameOnTimerCalled, OnTimerTriggered, UniqsTimerAllocCalled, UniqsTimerFreeCalled, UniqsTimerFreeCount, RunExceed1MSCount, RunAverageUS
 			, OnTimerTotalUS, OnTimerCount, OnTimerAverageUS, percent);
-#else
+#endif
+#if 0
 		printf("Timers:%d Run:%llu|%llu|%llu OnTimer:%llu|%llu|%llu OnTimer/Run:%llu\%% OnTimerCount/RunCount:%llu\n",
 			RunningTimersCount, RunTotalUS, RunCount, RunAverageUS, OnTimerTotalUS, OnTimerCount, OnTimerAverageUS, percent, av);
 #endif
@@ -301,6 +305,7 @@ int main(int argc, const char** argv)
 	printf("main start. s:%llu ms:%llu \n", s, ms);
 
 	pMgr = new TimerManager();
+	pMgrIII = new TimerManagerIII();
 
 	std::thread t(LogicThread);
 	t.detach();
@@ -323,6 +328,9 @@ int main(int argc, const char** argv)
 
 	delete pMgr;
 	pMgr = nullptr;
+
+	delete pMgrIII;
+	pMgrIII = nullptr;
 
 	google::ShutdownGoogleLogging();
 	return 0;

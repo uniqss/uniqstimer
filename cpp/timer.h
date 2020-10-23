@@ -23,7 +23,7 @@ public:
 	TimerIdType qwTimerId;
 	TimerMsType qwExpires; // 
 	TimerMsType qwPeriod;
-	void (*timerFn)(TimerIdType, void*, TimerMsType currTimeMS);
+	void (*timerFn)(TimerIdType, void*);
 	void* pParam;
 	bool bRunning;
 };
@@ -35,7 +35,7 @@ public:
 	~TimerManager();
 
 	// qwDueTime: first timeout   qwPeriod: then periodic timeout.(0: one shot timer)
-	bool CreateTimer(TimerIdType timerId, void (*timerFn)(TimerIdType, void*, TimerMsType currTimeMS), void* pParam, TimerMsType qwDueTime, TimerMsType qwPeriod);
+	bool CreateTimer(TimerIdType timerId, void (*timerFn)(TimerIdType, void*), void* pParam, TimerMsType qwDueTime, TimerMsType qwPeriod);
 	bool KillTimer(TimerIdType timerId);
 
 public:
@@ -47,5 +47,3 @@ public:
 	void Run();
 };
 
-int64_t UTimerGetCurrentTimeMS(void);
-void OnTimerError(const std::string& err);

@@ -209,16 +209,19 @@
     <ClInclude Include="main.h" />
     <ClInclude Include="mersenne_rand.h" />
     <ClInclude Include="timer.h" />
-    <ClInclude Include="timer_mem.h" />
+    <ClInclude Include="timerIII.h" />
+    <ClInclude Include="timer_helper.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="fake_rand.cpp" />
     <ClCompile Include="glog_helper.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="main_logicthread.cpp" />
+    <ClCompile Include="main_ontimer100ms.cpp" />
     <ClCompile Include="mersenne_rand.cpp" />
     <ClCompile Include="timer.cpp" />
-    <ClCompile Include="timer_mem.cpp" />
+    <ClCompile Include="timerIII.cpp" />
+    <ClCompile Include="timer_helper.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
