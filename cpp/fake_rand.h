@@ -2,4 +2,4 @@
 
 void FakeRandInit();
 
-int FakeRand();
+size_t FakeRand();

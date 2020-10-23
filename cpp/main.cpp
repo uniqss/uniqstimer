@@ -104,7 +104,8 @@ void OnTimer(TimerIdType timerId, void* pParam, TimerMsType currMS)
 	if (timerId >= timerIdMotherStart && timerId <= timerIdMotherStop)
 	{
 		// kill create rand
-		auto randTimerIdIdx = (FakeRand() % timerIdRandCount);
+		auto fakeRand = FakeRand();
+		auto randTimerIdIdx = (fakeRand % timerIdRandCount);
 		auto randTimerId = randTimerIdIdx + timerIdRandStart;
 
 		TimerIdType __randKill = FakeRand() % 10000;
@@ -157,11 +158,17 @@ void OnTimer(TimerIdType timerId, void* pParam, TimerMsType currMS)
 		TimerIdType randCreate = FakeRand() % 10000;
 		if (RunningTimersCount < timerIdRandCount && randCreate < 8000)
 		{
-			auto randRepeate = (FakeRand() % 2) > 0;
 
 			// 性能测试，避免创建大量小于128毫秒的定时器，128-256落到第一个轮的概率还是很大。
+#if 0
+			auto randRepeate = (FakeRand() % 2) > 0;
 			TimerMsType t1 = ((FakeRand() % (131072 + 6)) + 128);
 			TimerMsType t2 = randRepeate ? ((FakeRand() % (131072 + 6)) + 128) : 0;
+#else
+			TimerMsType t1 = 500;
+			TimerMsType t2 = 500;
+			auto randRepeate = true;
+#endif
 
 #ifdef UNIQS_LOG_EVERYTHING
 			LOG(INFO) << "OnTimer rand create timerId:" << timerId << " rState:" << rState << " randTimerId:" << randTimerId <<
@@ -212,7 +219,7 @@ void OnTimer(TimerIdType timerId, void* pParam, TimerMsType currMS)
 		extern int UniqsTimerFreeCount;
 		RunAverageUS = RunTotalUS / RunCount;
 		OnTimerAverageUS = OnTimerTotalUS / OnTimerCount;
-		auto percent = (RunTotalUS - OnTimerTotalUS) * 100 / RunTotalUS;
+		auto percent = (OnTimerTotalUS) * 100 / RunTotalUS;
 		auto av = OnTimerCount / RunCount;
 
 #if 0

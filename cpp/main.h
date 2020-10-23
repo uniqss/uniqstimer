@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Timer.h"
+
 const TimerIdType timerIdMotherMother = 1;
 const TimerIdType timerIdMotherStart = 1000000;
 const TimerIdType timerIdMotherCount = 5000;

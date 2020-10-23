@@ -106,12 +106,14 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
+    <TargetName>$(ProjectName)_$(ConfigurationName)_</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
     <LinkIncremental>true</LinkIncremental>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
+    <TargetName>$(ProjectName)_$(ConfigurationName)_</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">
     <LinkIncremental>false</LinkIncremental>
@@ -205,6 +207,7 @@
     <ClInclude Include="fake_rand.h" />
     <ClInclude Include="glog_helper.h" />
     <ClInclude Include="main.h" />
+    <ClInclude Include="mersenne_rand.hpp" />
     <ClInclude Include="timer.h" />
     <ClInclude Include="timer_mem.h" />
   </ItemGroup>

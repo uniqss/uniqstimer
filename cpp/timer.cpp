@@ -67,6 +67,33 @@ static void AddTimer(TimerManager* pTimerManager, TimerNode* pTimer, TimerMsType
 	bool negative = false;
 #endif
 
+#if 1
+	if (qwDueTime < TimerMsType(1) << (TIMER_BITS_PER_WHEEL * (TIMER_WHEEL_COUNT)))
+	{
+		for (TimerMsType i = 0; i < TIMER_WHEEL_COUNT; i++)
+		{
+			if (qwDueTime < TimerMsType(1) << (TIMER_BITS_PER_WHEEL * (i + 1)))
+			{
+				slotIdx = (qwExpires >> (TIMER_BITS_PER_WHEEL * i)) & TIMER_MASK;
+				wheelIdx = i;
+				break;
+			}
+		}
+	}
+	else if (qwDueTime < 0)
+	{
+		wheelIdx = 0;
+		slotIdx = pTimerManager->qwCurrentTimeMS & TIMER_MASK;
+#if defined( UNIQS_DEBUG_TIMER ) || defined (UNIQS_LOG_EVERYTHING)
+		negative = true;
+#endif
+	}
+	else
+	{
+		OnTimerError("AddTimer this should not happen");
+		return;
+	}
+#else
 	if (false) {}
 	else if (qwDueTime < TimerMsType(1) << (TIMER_BITS_PER_WHEEL * (0 + 1)))
 	{
@@ -106,6 +133,7 @@ static void AddTimer(TimerManager* pTimerManager, TimerNode* pTimer, TimerMsType
 		OnTimerError("AddTimer this should not happen");
 		return;
 	}
+#endif
 
 #ifdef UNIQS_LOG_EVERYTHING
 	LOG(INFO) << "AddTimer timerId:" << pTimer->qwTimerId << " source:" << pszAddTimerSource[source] << " fromWheelIdx:" << fromWheelIdx << " fromSlotIdx:" << fromSlotIdx <<
