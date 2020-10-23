@@ -110,7 +110,7 @@ void OnTimer(TimerIdType timerId, void* pParam, TimerMsType currMS)
 		auto randTimerId = randTimerIdIdx + timerIdRandStart;
 
 		TimerIdType __randKill = FakeRand() % 10000;
-#if 1
+#if 0
 		// ×îµÍ20% ×î¸ß85%
 		TimerIdType __randKillPercent = 2000 + ((TimerIdType)6500 * RunningTimersCount / timerIdRandCount);
 #else
@@ -119,7 +119,7 @@ void OnTimer(TimerIdType timerId, void* pParam, TimerMsType currMS)
 		timerIdRandCount;
 		auto& rInfo = arrTestRandTimerInfos[randTimerIdIdx];
 		auto& rState = rInfo.state;
-		if (RunningTimersCount > 100 && __randKill < __randKillPercent)
+		if (false && RunningTimersCount > 100 && __randKill < __randKillPercent)
 		{
 #ifdef UNIQS_LOG_EVERYTHING
 			LOG(INFO) << "OnTimer rand kill timerId:" << timerId << " rState:" << rState << " randTimerId:" << randTimerId << " currMS:" << currMS;

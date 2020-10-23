@@ -8,7 +8,7 @@ const TimerIdType timerIdMotherCount = 5000;
 const TimerIdType timerIdMotherStop = timerIdMotherStart + timerIdMotherCount;
 
 const TimerIdType timerIdRandStart = 10000000;
-const TimerIdType timerIdRandCount = 1000000;
+const TimerIdType timerIdRandCount = 800000;
 
 extern TimerIdType timerIdMotherCurr;
 

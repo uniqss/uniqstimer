@@ -207,7 +207,7 @@
     <ClInclude Include="fake_rand.h" />
     <ClInclude Include="glog_helper.h" />
     <ClInclude Include="main.h" />
-    <ClInclude Include="mersenne_rand.hpp" />
+    <ClInclude Include="mersenne_rand.h" />
     <ClInclude Include="timer.h" />
     <ClInclude Include="timer_mem.h" />
   </ItemGroup>
@@ -216,6 +216,7 @@
     <ClCompile Include="glog_helper.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="main_logicthread.cpp" />
+    <ClCompile Include="mersenne_rand.cpp" />
     <ClCompile Include="timer.cpp" />
     <ClCompile Include="timer_mem.cpp" />
   </ItemGroup>

@@ -30,7 +30,7 @@
     <ClInclude Include="main.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="mersenne_rand.hpp">
+    <ClInclude Include="mersenne_rand.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -52,6 +52,9 @@
     </ClCompile>
     <ClCompile Include="main_logicthread.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="mersenne_rand.cpp">
+      <Filter>Header Files</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

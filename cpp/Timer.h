@@ -19,9 +19,9 @@
 #define TimerMsType int64_t
 #define TimerIdType int64_t
 
-#define TIMER_BITS_PER_WHEEL 12
+#define TIMER_BITS_PER_WHEEL 8
 #define TIMER_SLOT_COUNT_PER_WHEEL 1 << TIMER_BITS_PER_WHEEL
-#define TIMER_WHEEL_COUNT 3
+#define TIMER_WHEEL_COUNT 5
 #define TIMER_MASK ((1 << TIMER_BITS_PER_WHEEL) - 1)
 
 #if 0
