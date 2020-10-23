@@ -6,37 +6,17 @@
 #include <stdlib.h>
 #include<chrono>
 #include <cassert>
+#include <time.h>
 
-
-#ifdef UNIQS_DEBUG_TIMER
-TimerMsType DebugDiffTimeMs = 0;
-#endif
 
 TimerMsType UTimerGetCurrentTimeMS(void)
 {
-#if 0
-	auto time_now = std::chrono::system_clock::now();
-	auto duration_in_ms = std::chrono::duration_cast<std::chrono::milliseconds>(time_now.time_since_epoch());
-#ifdef UNIQS_DEBUG_TIMER
-	return (TimerMsType)duration_in_ms.count() - DebugDiffTimeMs;
-#else
-	return (TimerMsType)duration_in_ms.count();
-#endif
-#else
-#include <time.h>
 	return clock();
-#endif
 }
 
 void OnTimerError(const std::string& err)
 {
-#ifdef UNIQS_LOG_EVERYTHING
-	LOG(INFO) << "OnTimer error err:" << err;
-#endif
-
 	throw std::logic_error("OnTimerError" + err);
-
-	//printf("OnTimer error err:%s\n", err.c_str());
 }
 
 enum EAddTimerSource
@@ -53,21 +33,12 @@ const char* pszAddTimerSource[] = {
 
 static void AddTimer(TimerManager* pTimerManager, TimerNode* pTimer, TimerMsType fromWheelIdx, TimerMsType fromSlotIdx, EAddTimerSource source)
 {
-#ifdef UNIQS_LOG_EVERYTHING
-	LOG(INFO) << "AddTimer timerId:"<<pTimer->qwTimerId<<"fromWheelIdx:" << fromWheelIdx << " fromSlotIdx:" << fromSlotIdx << " source:" << pszAddTimerSource[source];
-#endif
-
 	TimerMsType wheelIdx = 0;
 	TimerMsType slotIdx = 0;
 
 	TimerMsType qwExpires = pTimer->qwExpires;
 	TimerMsType qwDueTime = qwExpires - pTimerManager->qwCurrentTimeMS;
 
-#if defined( UNIQS_DEBUG_TIMER ) || defined (UNIQS_LOG_EVERYTHING)
-	bool negative = false;
-#endif
-
-#if 1
 	if (qwDueTime < TimerMsType(1) << (TIMER_BITS_PER_WHEEL * (TIMER_WHEEL_COUNT)))
 	{
 		for (TimerMsType i = 0; i < TIMER_WHEEL_COUNT; i++)
@@ -84,68 +55,13 @@ static void AddTimer(TimerManager* pTimerManager, TimerNode* pTimer, TimerMsType
 	{
 		wheelIdx = 0;
 		slotIdx = pTimerManager->qwCurrentTimeMS & TIMER_MASK;
-#if defined( UNIQS_DEBUG_TIMER ) || defined (UNIQS_LOG_EVERYTHING)
-		negative = true;
-#endif
 	}
 	else
 	{
 		OnTimerError("AddTimer this should not happen");
 		return;
 	}
-#else
-	if (false) {}
-	else if (qwDueTime < TimerMsType(1) << (TIMER_BITS_PER_WHEEL * (0 + 1)))
-	{
-		slotIdx = (qwExpires >> (TIMER_BITS_PER_WHEEL * 0)) & TIMER_MASK;
-		wheelIdx = 0;
-	}
-	else if (qwDueTime < TimerMsType(1) << (TIMER_BITS_PER_WHEEL * (1 + 1)))
-	{
-		slotIdx = (qwExpires >> (TIMER_BITS_PER_WHEEL * 1)) & TIMER_MASK;
-		wheelIdx = 1;
-	}
-	else if (qwDueTime < TimerMsType(1) << (TIMER_BITS_PER_WHEEL * (2 + 1)))
-	{
-		slotIdx = (qwExpires >> (TIMER_BITS_PER_WHEEL * 2)) & TIMER_MASK;
-		wheelIdx = 2;
-	}
-	else if (qwDueTime < TimerMsType(1) << (TIMER_BITS_PER_WHEEL * (3 + 1)))
-	{
-		slotIdx = (qwExpires >> (TIMER_BITS_PER_WHEEL * 3)) & TIMER_MASK;
-		wheelIdx = 3;
-	}
-	else if (qwDueTime < TimerMsType(1) << (TIMER_BITS_PER_WHEEL * (4 + 1)))
-	{
-		slotIdx = (qwExpires >> (TIMER_BITS_PER_WHEEL * 4)) & TIMER_MASK;
-		wheelIdx = 4;
-	}
-	else if (qwDueTime < 0)
-	{
-		wheelIdx = 0;
-		slotIdx = pTimerManager->qwCurrentTimeMS & TIMER_MASK;
-#if defined( UNIQS_DEBUG_TIMER ) || defined (UNIQS_LOG_EVERYTHING)
-		negative = true;
-#endif
-	}
-	else
-	{
-		OnTimerError("AddTimer this should not happen");
-		return;
-	}
-#endif
 
-#ifdef UNIQS_LOG_EVERYTHING
-	LOG(INFO) << "AddTimer timerId:" << pTimer->qwTimerId << " source:" << pszAddTimerSource[source] << " fromWheelIdx:" << fromWheelIdx << " fromSlotIdx:" << fromSlotIdx <<
-		" wheelIdx:" << wheelIdx << " slotIdx:" << slotIdx << " negative:" << negative << " qwDueTime:" << qwDueTime <<
-		" qwExpires:" << qwExpires << " qwCurrentTimeMS:" << pTimerManager->qwCurrentTimeMS;
-#endif
-
-#if defined (UNIQS_DEBUG_TIMER )
-	printf("AddTimer source:%s fromWheelIdx:%llu fromSlotIdx:%llu wheelIdx:%llu slotIdx:%llu negative:%d qwDueTime:%llu qwExpires:%llu qwCurrentTimeMS:%llu\n",
-		pszAddTimerSource[source], fromWheelIdx, fromSlotIdx, wheelIdx, slotIdx, int(negative), qwDueTime, qwExpires, pTimerManager->qwCurrentTimeMS);
-#endif
-	//printf("AddTimer qwExpires:%llu qwDueTime:%llu i:%llu pTimerManager->qwCurrentTimeMS:%llu\n", qwExpires, qwDueTime, i, pTimerManager->qwCurrentTimeMS);
 	if (pTimerManager->arrListTimer[wheelIdx][slotIdx] == nullptr)
 	{
 		pTimerManager->arrListTimer[wheelIdx][slotIdx] = pTimer;
@@ -161,12 +77,6 @@ static void AddTimer(TimerManager* pTimerManager, TimerNode* pTimer, TimerMsType
 // 循环该slot里的所有节点，重新AddTimer到管理器中
 static void CascadeTimer(TimerManager* pTimerManager, TimerMsType wheelIdx, TimerMsType slotIdx)
 {
-#ifdef UNIQS_LOG_EVERYTHING
-	LOG(INFO) << "CascadeTimer begin wheelIdx:" << wheelIdx << " slotIdx:" << slotIdx;
-#endif
-#ifdef UNIQS_DEBUG_TIMER
-	printf("CascadeTimer begin wheelIdx:%llu slotIdx:%llu \n", wheelIdx, slotIdx);
-#endif
 	TimerNode* pTimer = pTimerManager->arrListTimer[wheelIdx][slotIdx];
 	TimerNode* pNext = nullptr;
 	for (;pTimer != nullptr;pTimer = pNext)
@@ -175,18 +85,10 @@ static void CascadeTimer(TimerManager* pTimerManager, TimerMsType wheelIdx, Time
 
 		if (pTimer->bRunning)
 		{
-#ifdef UNIQS_LOG_EVERYTHING
-			LOG(INFO) << "CascadeTimer running AddTimer qwTimerId:" << pTimer->qwTimerId << " wheelIdx:" << wheelIdx << " slotIdx:" << slotIdx;
-#endif
 			AddTimer(pTimerManager, pTimer, wheelIdx, slotIdx, EAddTimerSource_Cascade);
 		}
 		else
 		{
-#ifdef UNIQS_LOG_EVERYTHING
-			LOG(INFO) << "CascadeTimer killed delete qwTimerId:" << pTimer->qwTimerId << " wheelIdx:" << wheelIdx << " slotIdx:" << slotIdx;
-#endif
-			// timer还没被放到最终执行轮就已经被kill掉了，需要释放掉
-			//pTimerManager->pTimers.erase(pTimer->qwTimerId);
 			FreeObj(pTimer);
 		}
 	}
@@ -227,20 +129,12 @@ void TimerManager::Run()
 				}
 				else
 				{
-#ifdef UNIQS_LOG_EVERYTHING
-					LOG(INFO) << "TimerManager::Run running state. last trigger. kill delete timerId:" << timerId << " pTimer->qwPeriod:" <<
-						pTimer->qwPeriod << " pTimer->qwExpires:" << pTimer->qwExpires << " currTimeMS:" << currTimeMS;
-#endif
 					FreeObj(pTimer);
 					pTimers.erase(timerId);
 				}
 			}
 			else
 			{
-#ifdef UNIQS_LOG_EVERYTHING
-				LOG(INFO) << "TimerManager::Run killed state. delete timerId:" << timerId << " pTimer->qwPeriod:" <<
-					pTimer->qwPeriod << " pTimer->qwExpires:" << pTimer->qwExpires << " currTimeMS:" << currTimeMS;
-#endif
 				FreeObj(pTimer);
 			}
 		}
@@ -294,10 +188,6 @@ bool CreateTimer(TimerManager* pTimerManager, TimerIdType timerId, void(*timerFn
 	if (NULL == timerFn || NULL == pTimerManager)
 		return false;
 
-#ifdef UNIQS_LOG_EVERYTHING
-	LOG(INFO) << "CreateTimer timerId:" << timerId << " qwDueTime:" <<
-		qwDueTime << " qwPeriod:" << qwPeriod << " pTimerManager->qwCurrentTimeMS:" << pTimerManager->qwCurrentTimeMS;
-#endif
 	// 两者都为0,无意义
 	if (qwDueTime == 0 && qwPeriod == 0)
 	{
@@ -344,10 +234,6 @@ bool KillTimer(TimerManager* pTimerManager, TimerIdType timerId)
 		return false;
 	}
 	auto it = pTimerManager->pTimers.find(timerId);
-#ifdef UNIQS_LOG_EVERYTHING
-	LOG(INFO) << "KillTimer timerId:" << timerId << " exists:" <<
-		(it == pTimerManager->pTimers.end());
-#endif
 	if (it == pTimerManager->pTimers.end())
 	{
 		return false;

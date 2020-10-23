@@ -7,14 +7,6 @@
 #include<unordered_set>
 #include<stdint.h>
 
-#if 0
-#define UNIQS_LOG_EVERYTHING
-#endif
-
-#ifdef UNIQS_LOG_EVERYTHING
-#include "glog_helper.h"
-#endif
-
 
 #define TimerMsType int64_t
 #define TimerIdType int64_t
@@ -23,14 +15,6 @@
 #define TIMER_SLOT_COUNT_PER_WHEEL 1 << TIMER_BITS_PER_WHEEL
 #define TIMER_WHEEL_COUNT 5
 #define TIMER_MASK ((1 << TIMER_BITS_PER_WHEEL) - 1)
-
-#if 0
-#define UNIQS_DEBUG_TIMER
-#endif
-
-#ifdef UNIQS_DEBUG_TIMER
-extern TimerMsType DebugDiffTimeMs;
-#endif
 
 class TimerNode
 {
