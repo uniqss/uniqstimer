@@ -33,7 +33,8 @@ class TimerManager
 public:
 	TimerMsType qwCurrentTimeMS; // current time ms
 	std::unordered_map<TimerIdType, TimerNode*> pTimers;
-	TimerNode* arrListTimer[TIMER_WHEEL_COUNT][TIMER_SLOT_COUNT_PER_WHEEL];
+	TimerNode* arrListTimerHead[TIMER_WHEEL_COUNT][TIMER_SLOT_COUNT_PER_WHEEL];
+	TimerNode* arrListTimerTail[TIMER_WHEEL_COUNT][TIMER_SLOT_COUNT_PER_WHEEL];
 public:
 	void Run();
 };
