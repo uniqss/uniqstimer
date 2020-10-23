@@ -11,15 +11,7 @@ void LogicThread()
 
 	//CreateTimer(pMgr, 1, OnTimer, (void*)"test", 1, 1);
 #if 1
-	CreateTimer(pMgr, timerIdMotherMother, OnTimer, (void*)"mother", 100, 100);
-#endif
-
-#if 0
-	CreateTimer(pMgr, 100, OnTimer, (void*)"100", 100, 100);
-#endif
-#if 0
-	CreateTimer(pMgr, 300, OnTimer, (void*)"300", 300, 300);
-	CreateTimer(pMgr, 600, OnTimer, (void*)"600", 600, 600);
+	pMgr->CreateTimer(timerIdMotherMother, OnTimer, (void*)"mother", 100, 100);
 #endif
 
 	int64_t beginUS = 0;

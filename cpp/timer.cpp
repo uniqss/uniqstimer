@@ -148,34 +148,27 @@ void TimerManager::Run()
 	}
 }
 
-TimerManager* CreateTimerManager(void)
+TimerManager::TimerManager()
 {
-	TimerManager* pTimerManager = new TimerManager();
-	if (pTimerManager != NULL)
-	{
-		for (auto wheelIdx = 0; wheelIdx < TIMER_WHEEL_COUNT; wheelIdx++)
-		{
-			for (auto slotIdx = 0; slotIdx < TIMER_SLOT_COUNT_PER_WHEEL; slotIdx++)
-			{
-				pTimerManager->arrListTimerHead[wheelIdx][slotIdx] = nullptr;
-				pTimerManager->arrListTimerTail[wheelIdx][slotIdx] = nullptr;
-			}
-		}
-
-		pTimerManager->qwCurrentTimeMS = UTimerGetCurrentTimeMS();
-	}
-	return pTimerManager;
-}
-
-void DestroyTimerManager(TimerManager* pTimerManager)
-{
-	if (NULL == pTimerManager)
-		return;
 	for (auto wheelIdx = 0; wheelIdx < TIMER_WHEEL_COUNT; wheelIdx++)
 	{
 		for (auto slotIdx = 0; slotIdx < TIMER_SLOT_COUNT_PER_WHEEL; slotIdx++)
 		{
-			TimerNode* pTimer = pTimerManager->arrListTimerHead[wheelIdx][slotIdx];
+			this->arrListTimerHead[wheelIdx][slotIdx] = nullptr;
+			this->arrListTimerTail[wheelIdx][slotIdx] = nullptr;
+		}
+	}
+
+	this->qwCurrentTimeMS = UTimerGetCurrentTimeMS();
+}
+
+TimerManager::~TimerManager()
+{
+	for (auto wheelIdx = 0; wheelIdx < TIMER_WHEEL_COUNT; wheelIdx++)
+	{
+		for (auto slotIdx = 0; slotIdx < TIMER_SLOT_COUNT_PER_WHEEL; slotIdx++)
+		{
+			TimerNode* pTimer = this->arrListTimerHead[wheelIdx][slotIdx];
 			TimerNode* pNext = nullptr;
 			for (;pTimer != nullptr;pTimer = pNext)
 			{
@@ -185,12 +178,11 @@ void DestroyTimerManager(TimerManager* pTimerManager)
 			}
 		}
 	}
-	delete pTimerManager;
 }
 
-bool CreateTimer(TimerManager* pTimerManager, TimerIdType timerId, void(*timerFn)(TimerIdType, void*, TimerMsType currTimeMS), void* pParam, TimerMsType qwDueTime, TimerMsType qwPeriod)
+bool TimerManager::CreateTimer(TimerIdType timerId, void(*timerFn)(TimerIdType, void*, TimerMsType currTimeMS), void* pParam, TimerMsType qwDueTime, TimerMsType qwPeriod)
 {
-	if (NULL == timerFn || NULL == pTimerManager)
+	if (NULL == timerFn)
 		return false;
 
 	// 两者都为0,无意义
@@ -205,8 +197,8 @@ bool CreateTimer(TimerManager* pTimerManager, TimerIdType timerId, void(*timerFn
 		return false;
 	}
 
-	auto it = pTimerManager->pTimers.find(timerId);
-	if (it != pTimerManager->pTimers.end())
+	auto it = this->pTimers.find(timerId);
+	if (it != this->pTimers.end())
 	{
 		return false;
 	}
@@ -225,21 +217,17 @@ bool CreateTimer(TimerManager* pTimerManager, TimerIdType timerId, void(*timerFn
 
 	pTimer->bRunning = true;
 
-	pTimer->qwExpires = pTimerManager->qwCurrentTimeMS + qwDueTime;
-	AddTimer(pTimerManager, pTimer, 0, 0, EAddTimerSource_Create_NewAlloc);
-	pTimerManager->pTimers[timerId] = pTimer;
+	pTimer->qwExpires = this->qwCurrentTimeMS + qwDueTime;
+	AddTimer(this, pTimer, 0, 0, EAddTimerSource_Create_NewAlloc);
+	this->pTimers[timerId] = pTimer;
 
 	return true;
 }
 
-bool KillTimer(TimerManager* pTimerManager, TimerIdType timerId)
+bool TimerManager::KillTimer(TimerIdType timerId)
 {
-	if (pTimerManager == nullptr)
-	{
-		return false;
-	}
-	auto it = pTimerManager->pTimers.find(timerId);
-	if (it == pTimerManager->pTimers.end())
+	auto it = this->pTimers.find(timerId);
+	if (it == this->pTimers.end())
 	{
 		return false;
 	}
@@ -251,7 +239,7 @@ bool KillTimer(TimerManager* pTimerManager, TimerIdType timerId)
 	}
 
 	pTimer->bRunning = false;
-	pTimerManager->pTimers.erase(it);
+	this->pTimers.erase(it);
 
 	return true;
 }

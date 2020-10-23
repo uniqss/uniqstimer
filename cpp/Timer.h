@@ -31,6 +31,14 @@ public:
 class TimerManager
 {
 public:
+	TimerManager();
+	~TimerManager();
+
+	// qwDueTime: first timeout   qwPeriod: then periodic timeout.(0: one shot timer)
+	bool CreateTimer(TimerIdType timerId, void (*timerFn)(TimerIdType, void*, TimerMsType currTimeMS), void* pParam, TimerMsType qwDueTime, TimerMsType qwPeriod);
+	bool KillTimer(TimerIdType timerId);
+
+public:
 	TimerMsType qwCurrentTimeMS; // current time ms
 	std::unordered_map<TimerIdType, TimerNode*> pTimers;
 	TimerNode* arrListTimerHead[TIMER_WHEEL_COUNT][TIMER_SLOT_COUNT_PER_WHEEL];
@@ -41,12 +49,3 @@ public:
 
 int64_t UTimerGetCurrentTimeMS(void);
 void OnTimerError(const std::string& err);
-
-TimerManager* CreateTimerManager(void);
-
-void DestroyTimerManager(TimerManager* pTimerManager);
-
-// qwDueTime: first timeout   qwPeriod: then periodic timeout.(0: one shot timer)
-bool CreateTimer(TimerManager* pTimerManager, TimerIdType timerId, void (*timerFn)(TimerIdType, void*, TimerMsType currTimeMS), void* pParam, TimerMsType qwDueTime, TimerMsType qwPeriod);
-
-bool KillTimer(TimerManager* pTimerManager, TimerIdType timerId);

@@ -92,13 +92,13 @@ void OnTimer(TimerIdType timerId, void* pParam, TimerMsType currMS)
 		{
 			for (size_t i = 0; i < 100; i++)
 			{
-				CreateTimer(pMgr, timerIdMotherCurr, OnTimer, (void*)"mother", 500, 500);
+				pMgr->CreateTimer(timerIdMotherCurr, OnTimer, (void*)"mother", 500, 500);
 				timerIdMotherCurr++;
 			}
 		}
 		else
 		{
-			KillTimer(pMgr, timerIdMotherMother);
+			pMgr->KillTimer(timerIdMotherMother);
 		}
 	}
 	static int RunningTimersCount = 100;
@@ -127,7 +127,7 @@ void OnTimer(TimerIdType timerId, void* pParam, TimerMsType currMS)
 			// 0д╛хо 1created 2killed
 			if (rState == 1)
 			{
-				bOk = KillTimer(pMgr, randTimerId);
+				bOk = pMgr->KillTimer(randTimerId);
 				if (!bOk)
 				{
 					OnTimerError("OnTimer KillTimer failed randTimerId:" + std::to_string(randTimerId));
@@ -137,7 +137,7 @@ void OnTimer(TimerIdType timerId, void* pParam, TimerMsType currMS)
 				RunningTimersCount--;
 				rInfo.Clear();
 				rState = 2;
-				bOk = KillTimer(pMgr, randTimerId);
+				bOk = pMgr->KillTimer(randTimerId);
 				if (bOk)
 				{
 					OnTimerError("OnTimer KillTimer failed randTimerId:" + std::to_string(randTimerId));
@@ -148,7 +148,7 @@ void OnTimer(TimerIdType timerId, void* pParam, TimerMsType currMS)
 #ifdef UNIQS_LOG_EVERYTHING
 				LOG(INFO) << "OnTimer rand kill timerId:" << timerId << " randTimerId:" << randTimerId << " currMS:" << currMS;
 #endif
-				bOk = KillTimer(pMgr, randTimerId);
+				bOk = pMgr->KillTimer(randTimerId);
 				if (bOk)
 				{
 					OnTimerError("OnTimer KillTimer failed randTimerId:" + std::to_string(randTimerId));
@@ -178,7 +178,7 @@ void OnTimer(TimerIdType timerId, void* pParam, TimerMsType currMS)
 			// 0д╛хо 1created 2killed
 			if (rState == 1)
 			{
-				bOk = CreateTimer(pMgr, randTimerId, OnTimer, (void*)"", t1, t2);
+				bOk = pMgr->CreateTimer(randTimerId, OnTimer, (void*)"", t1, t2);
 				if (bOk)
 				{
 					OnTimerError("OnTimer CreateTimer should fail but succeeded. randTimerId:" + std::to_string(randTimerId));
@@ -186,7 +186,7 @@ void OnTimer(TimerIdType timerId, void* pParam, TimerMsType currMS)
 			}
 			else
 			{
-				bOk = CreateTimer(pMgr, randTimerId, OnTimer, (void*)"", t1, t2);
+				bOk = pMgr->CreateTimer(randTimerId, OnTimer, (void*)"", t1, t2);
 				if (!bOk)
 				{
 					OnTimerError("OnTimer CreateTimer should succeed but failed. randTimerId:" + std::to_string(randTimerId));
@@ -199,7 +199,7 @@ void OnTimer(TimerIdType timerId, void* pParam, TimerMsType currMS)
 				rInfo.createTime = currMS;
 				rInfo.dueTime = t1;
 				rInfo.period = t2;
-				bOk = CreateTimer(pMgr, randTimerId, OnTimer, (void*)"", t1, t2);
+				bOk = pMgr->CreateTimer(randTimerId, OnTimer, (void*)"", t1, t2);
 				if (bOk)
 				{
 					OnTimerError("OnTimer KillTimer failed randTimerId:" + std::to_string(randTimerId));
@@ -295,20 +295,12 @@ int main(int argc, const char** argv)
 {
 	init_glog(argv[0], "./logs");
 	arrTestRandTimerInfos.resize(timerIdRandCount);
-#ifdef UNIQS_DEBUG_TIMER
-	DebugDiffTimeMs = 0;
-#if 1
-	DebugDiffTimeMs = UTimerGetCurrentTimeMS();
-	//DebugDiffTimeMs -= 100 + 100 * (1 << TIMER_BITS_PER_WHEEL) + 100 * (1 << (2 * TIMER_BITS_PER_WHEEL)) + 100 * (1 << (3 * TIMER_BITS_PER_WHEEL));
-	DebugDiffTimeMs -= 100 + 100 * (1 << TIMER_BITS_PER_WHEEL);
-#endif
-#endif
 	auto currMS = UTimerGetCurrentTimeMS();
 	auto ms = currMS % 1000;
 	auto s = currMS / 1000;
 	printf("main start. s:%llu ms:%llu \n", s, ms);
 
-	pMgr = CreateTimerManager();
+	pMgr = new TimerManager();
 
 	std::thread t(LogicThread);
 	t.detach();
@@ -329,7 +321,8 @@ int main(int argc, const char** argv)
 		std::this_thread::sleep_for(std::chrono::microseconds(500));
 	}
 
-	DestroyTimerManager(pMgr);
+	delete pMgr;
+	pMgr = nullptr;
 
 	google::ShutdownGoogleLogging();
 	return 0;
