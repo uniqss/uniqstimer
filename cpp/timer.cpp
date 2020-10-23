@@ -92,7 +92,7 @@ void TimerManager::Run()
 			CascadeTimer(this, i + 1, idxNextWheelSlotIdx);
 		}
 
-		TimerNode* pTimer = arrListTimerHead[0][idxExecutingSlotIdx];
+		TimerNode* pTimer = this->arrListTimerHead[0][idxExecutingSlotIdx];
 		TimerNode* pNext = nullptr;
 		for (;pTimer != nullptr;pTimer = pNext)
 		{
@@ -110,7 +110,7 @@ void TimerManager::Run()
 				else
 				{
 					FreeObj(pTimer);
-					pTimers.erase(timerId);
+					this->pTimers.erase(timerId);
 				}
 			}
 			else
@@ -118,8 +118,8 @@ void TimerManager::Run()
 				FreeObj(pTimer);
 			}
 		}
-		arrListTimerHead[0][idxExecutingSlotIdx] = nullptr;
-		arrListTimerTail[0][idxExecutingSlotIdx] = nullptr;
+		this->arrListTimerHead[0][idxExecutingSlotIdx] = nullptr;
+		this->arrListTimerTail[0][idxExecutingSlotIdx] = nullptr;
 
 		this->qwCurrentTimeMS++;
 	}
