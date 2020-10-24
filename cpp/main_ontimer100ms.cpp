@@ -2,7 +2,7 @@
 
 #include "timer_helper.h"
 
-void OnTimerIII(TimerIdTypeIII timerId, void* pParam)
+void OnTimerIII(TimerIdType timerId, void* pParam)
 {
 	const char* pszStr = (const char*)pParam;
 	++FrameOnTimerCalled;

@@ -29,6 +29,6 @@ extern uint64_t FrameOnTimerCalled;
 
 
 void OnTimer(TimerIdType timerId, void* pParam);
-void OnTimerIII(TimerIdTypeIII timerId, void* pParam);
+void OnTimerIII(TimerIdType timerId, void* pParam);
 void LogicThread();
 TimerMsType UTimerGetCurrentTimeUS(void);

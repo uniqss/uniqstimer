@@ -158,7 +158,7 @@ TimerManagerIII::~TimerManagerIII()
 	}
 }
 
-bool TimerManagerIII::CreateTimer(TimerIdTypeIII timerId, void(*timerFn)(TimerIdTypeIII, void*), void* pParam, TimerMsTypeIII qwDueTime, TimerMsTypeIII qwPeriod)
+bool TimerManagerIII::CreateTimer(TimerIdType timerId, void(*timerFn)(TimerIdType, void*), void* pParam, TimerMsTypeIII qwDueTime, TimerMsTypeIII qwPeriod)
 {
 	if (NULL == timerFn)
 		return false;
@@ -205,7 +205,7 @@ bool TimerManagerIII::CreateTimer(TimerIdTypeIII timerId, void(*timerFn)(TimerId
 	return true;
 }
 
-bool TimerManagerIII::KillTimer(TimerIdTypeIII timerId)
+bool TimerManagerIII::KillTimer(TimerIdType timerId)
 {
 	auto it = this->pTimers.find(timerId);
 	if (it == this->pTimers.end())

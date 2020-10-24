@@ -3,9 +3,10 @@
 #include<unordered_map>
 #include<stdint.h>
 
+#include "timer_def.h"
+
 
 #define TimerMsTypeIII int
-#define TimerIdTypeIII int
 
 #define TIMER_BITS_PER_WHEELIII 6
 #define TIMER_SLOT_COUNT_PER_WHEELIII 1 << TIMER_BITS_PER_WHEELIII
@@ -17,10 +18,10 @@ class TimerNodeIII
 {
 public:
 	TimerNodeIII* pNext;
-	TimerIdTypeIII qwTimerId;
+	TimerIdType qwTimerId;
 	TimerMsTypeIII qwExpires; // 
 	TimerMsTypeIII qwPeriod;
-	void (*timerFn)(TimerIdTypeIII, void*);
+	void (*timerFn)(TimerIdType, void*);
 	void* pParam;
 	bool bRunning;
 };
@@ -32,12 +33,12 @@ public:
 	~TimerManagerIII();
 
 	// qwDueTime: first timeout   qwPeriod: then periodic timeout.(0: one shot timer)
-	bool CreateTimer(TimerIdTypeIII timerId, void (*timerFn)(TimerIdTypeIII, void*), void* pParam, TimerMsTypeIII qwDueTime, TimerMsTypeIII qwPeriod);
-	bool KillTimer(TimerIdTypeIII timerId);
+	bool CreateTimer(TimerIdType timerId, void (*timerFn)(TimerIdType, void*), void* pParam, TimerMsTypeIII qwDueTime, TimerMsTypeIII qwPeriod);
+	bool KillTimer(TimerIdType timerId);
 
 public:
 	TimerMsTypeIII qwCurrentTimeMS; // current time ms / 100
-	std::unordered_map<TimerIdTypeIII, TimerNodeIII*> pTimers;
+	std::unordered_map<TimerIdType, TimerNodeIII*> pTimers;
 	TimerNodeIII* arrListTimerHead[TIMER_WHEEL_COUNTIII][TIMER_SLOT_COUNT_PER_WHEELIII];
 	TimerNodeIII* arrListTimerTail[TIMER_WHEEL_COUNTIII][TIMER_SLOT_COUNT_PER_WHEELIII];
 public:

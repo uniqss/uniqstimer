@@ -10,6 +10,7 @@ import (
 )
 
 var pMgr *uniqstimer.TimerManager = nil
+var pMgrIII *uniqstimer.TimerManagerIII = nil
 
 const timerIdMother uniqstimer.TimerIdType = 2
 const timerIdMotherEnd uniqstimer.TimerIdType = 5000
@@ -17,7 +18,7 @@ const timerIdMotherEnd uniqstimer.TimerIdType = 5000
 var timerIdMotherCurr = timerIdMother
 
 const timerIdRandStart uniqstimer.TimerIdType = 10000
-const timerIdRandCount uniqstimer.TimerIdType = 1000000
+const timerIdRandCount uniqstimer.TimerIdType = 6000000
 
 var RunningTimersCount int = 100
 
@@ -55,6 +56,10 @@ var arrTestRandTimerInfos [timerIdRandCount]*TestRandTimerInfo
 var lastTimeMS = uniqstimer.UTimerGetCurrentTimeMS()
 var OnTimerTriggered uniqstimer.TimerMsType= 0
 
+func OnTimerIII(timerId uniqstimer.TimerIdType, pParam interface{}) {
+	fmt.Println("OnTimerIII ", timerId)
+}
+
 func OnTimer(timerId uniqstimer.TimerIdType, pParam interface{}) {
 	//fmt.Print("OnTimer ", timerId)
 	currMS := uniqstimer.UTimerGetCurrentTimeMS()
@@ -62,11 +67,11 @@ func OnTimer(timerId uniqstimer.TimerIdType, pParam interface{}) {
 	if timerId == 1 {
 		if timerIdMotherCurr <= timerIdMotherEnd {
 			for i := 1; i < 10 && timerIdMotherCurr <= timerIdMotherEnd; i++ {
-				uniqstimer.CreateTimer(pMgr, timerIdMotherCurr, OnTimer, "mother", 500, 500)
+				pMgr.CreateTimer(timerIdMotherCurr, OnTimer, "mother", 500, 500)
 				timerIdMotherCurr++
 			}
 		} else {
-			uniqstimer.KillTimer(pMgr, timerId)
+			pMgr.KillTimer(timerId)
 		}
 	} else if timerId <= timerIdMotherEnd {
 		// rand crate kill
@@ -79,7 +84,7 @@ func OnTimer(timerId uniqstimer.TimerIdType, pParam interface{}) {
 		var __randKillPercent uniqstimer.TimerIdType = 5000
 		if __randKill < __randKillPercent {
 			if rInfo.state == 1 {
-				bOk := uniqstimer.KillTimer(pMgr, randTimerId)
+				bOk := pMgr.KillTimer(randTimerId)
 				if !bOk {
 					uniqstimer.OnTimerError("OnTimer KillTimer failed randTimerId:")
 					//printf("OnTimer KillTimer failed. timerId:%llu\n", timerId);
@@ -88,12 +93,12 @@ func OnTimer(timerId uniqstimer.TimerIdType, pParam interface{}) {
 				RunningTimersCount--
 				rInfo.Clear()
 				rInfo.state = 2
-				bOk = uniqstimer.KillTimer(pMgr, randTimerId)
+				bOk = pMgr.KillTimer(randTimerId)
 				if bOk {
 					uniqstimer.OnTimerError("OnTimer KillTimer failed randTimerId:")
 				}
 			} else {
-				bOk := uniqstimer.KillTimer(pMgr, randTimerId)
+				bOk := pMgr.KillTimer(randTimerId)
 				if bOk {
 					uniqstimer.OnTimerError("OnTimer KillTimer failed randTimerId:")
 				}
@@ -112,12 +117,12 @@ func OnTimer(timerId uniqstimer.TimerIdType, pParam interface{}) {
 			}
 
 			if rInfo.state == 1 {
-				bOk := uniqstimer.CreateTimer(pMgr, randTimerId, OnTimer, "", t1, t2)
+				bOk := pMgr.CreateTimer(randTimerId, OnTimer, "", t1, t2)
 				if bOk {
 					uniqstimer.OnTimerError("OnTimer CreateTimer should fail but succeeded. randTimerId:")
 				}
 			} else {
-				bOk := uniqstimer.CreateTimer(pMgr, randTimerId, OnTimer, "", t1, t2)
+				bOk := pMgr.CreateTimer(randTimerId, OnTimer, "", t1, t2)
 				if !bOk {
 					uniqstimer.OnTimerError("OnTimer CreateTimer should succeed but failed. randTimerId:")
 				}
@@ -126,15 +131,15 @@ func OnTimer(timerId uniqstimer.TimerIdType, pParam interface{}) {
 				rInfo.state = 1
 				rInfo.triggeredCount = 0
 				rInfo.isRepeate = randRepeate
-				rInfo.createTime = currMS
+				rInfo.createTime = uniqstimer.TimerMsType(currMS)
 				rInfo.dueTime = t1
 				rInfo.period = t2
-				bOk = uniqstimer.CreateTimer(pMgr, randTimerId, OnTimer, "", t1, t2)
+				bOk = pMgr.CreateTimer(randTimerId, OnTimer, "", t1, t2)
 				if bOk {
 					uniqstimer.OnTimerError("OnTimer KillTimer failed randTimerId:")
 				}
 			}
-			uniqstimer.CreateTimer(pMgr, randTimerId, OnTimer, "rand", t1, t2)
+			pMgr.CreateTimer(randTimerId, OnTimer, "rand", t1, t2)
 		}
 	}
 
@@ -160,10 +165,11 @@ func OnTimer(timerId uniqstimer.TimerIdType, pParam interface{}) {
 		shouldTimeMS += rInfo.dueTime*uniqstimer.TimerMsType(rInfo.triggeredCount) + rInfo.period*uniqstimer.TimerMsType(rInfo.triggeredCountRepeate)
 
 		var __diff uniqstimer.TimerMsType = 0
-		if shouldTimeMS > currMS {
-			__diff = shouldTimeMS - currMS
+		currTimeMs := uniqstimer.TimerMsType(currMS)
+		if shouldTimeMS > currTimeMs {
+			__diff = shouldTimeMS - currTimeMs
 		} else {
-			__diff = currMS - shouldTimeMS
+			__diff = currTimeMs - shouldTimeMS
 		}
 		if __diff > 100 {
 			uniqstimer.OnTimerError("timer time check error")
@@ -178,10 +184,18 @@ func OnTimer(timerId uniqstimer.TimerIdType, pParam interface{}) {
 var working = true
 
 func logicThread() {
-	uniqstimer.CreateTimer(pMgr, 1, OnTimer, "root", 500, 500)
+	pMgr.CreateTimer(1, OnTimer, "root", 500, 500)
+
+	pMgrIII.CreateTimer(1, OnTimerIII, "timer III", 500, 500)
+
+	var lastMS int64 = 0
 	for working {
+		currMS := uniqstimer.UTimerGetCurrentTimeMS()
+		if currMS - lastMS > 100 {
+			pMgrIII.Run()
+		}
 		pMgr.Run()
-		time.Sleep(time.Microsecond * 500)
+		time.Sleep(time.Microsecond * 100)
 	}
 }
 
@@ -190,7 +204,8 @@ func main() {
 	for ; i < timerIdRandCount; i++ {
 		arrTestRandTimerInfos[i] = NewTestRandTimerInfo()
 	}
-	pMgr = uniqstimer.CreateTimerManager()
+	pMgr = uniqstimer.NewTimerManager()
+	pMgrIII = uniqstimer.NewTimerManagerIII()
 	go logicThread()
 
 	for working {
@@ -205,5 +220,6 @@ func main() {
 		}
 	}
 
-	uniqstimer.DestroyTimerManager(pMgr)
+	uniqstimer.DeleteTimerManager(pMgr)
+	uniqstimer.DeleteTimerManagerIII(pMgrIII)
 }

@@ -210,6 +210,7 @@
     <ClInclude Include="mersenne_rand.h" />
     <ClInclude Include="timer.h" />
     <ClInclude Include="timerIII.h" />
+    <ClInclude Include="timer_def.h" />
     <ClInclude Include="timer_helper.h" />
   </ItemGroup>
   <ItemGroup>

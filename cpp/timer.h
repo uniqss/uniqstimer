@@ -3,9 +3,10 @@
 #include<unordered_map>
 #include<stdint.h>
 
+#include "timer_def.h"
+
 
 #define TimerMsType int64_t
-#define TimerIdType int64_t
 
 #define TIMER_BITS_PER_WHEEL 8
 #define TIMER_SLOT_COUNT_PER_WHEEL 1 << TIMER_BITS_PER_WHEEL

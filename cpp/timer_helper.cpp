@@ -3,9 +3,10 @@
 #include<time.h>
 #include<stdexcept>
 
-TimerNode* __pFreeTimerHeadMem;
 int UniqsTimerAllocCalled = 0;
 int UniqsTimerFreeCalled = 0;
+
+TimerNode* __pFreeTimerHeadMem;
 int UniqsTimerFreeCount = 0;
 const int UNIQS_TIMER_CACHE_MAX = 4096;
 const int UNIQS_TIMER_CACHE_DELETE = UNIQS_TIMER_CACHE_MAX / 2;
