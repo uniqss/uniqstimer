@@ -1,4 +1,4 @@
-# uniqstimer
+# uniqstimer C++/go/js
 
 五个轮
 每个轮里面有256个槽
