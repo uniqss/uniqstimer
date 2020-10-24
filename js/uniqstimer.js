@@ -247,4 +247,4 @@ class TimerManager {
 };
 
 TimerManager.instance = new TimerManager();
-module.exports = TimerManager.instance;
+export default TimerManager.instance;
