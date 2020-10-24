@@ -1,7 +1,8 @@
-const TIMER_BITS_PER_WHEEL = 8;
+const TIMER_BITS_PER_WHEEL = 6;
 const TIMER_SLOT_COUNT_PER_WHEEL = 1 << 8;
 const TIMER_WHEEL_COUNT = 5;
 const TIMER_MASK = (1 << TIMER_BITS_PER_WHEEL) - 1;
+const TIMER_MS_COUNTIII = 100;
 
 const ADDTIMER_SOURCE_NEW = 1;
 const ADDTIMER_SOURCE_CASCADE = 2;
@@ -138,7 +139,7 @@ class TimerManager {
                 this.arrListTimerTail[wheelidx][slotIdx] = undefined;
             }
         }
-        this.qwCurrentTimeMS = this.UTimerGetCurrentTimeMS();
+        this.qwCurrentTimeMS = this.UTimerGetCurrentTimeMS() / TIMER_MS_COUNTIII;
         console.log("uniqs TimerManager:constructor this.qwCurrentTimeMS:", this.qwCurrentTimeMS);
     }
     UTimerGetCurrentTimeMS() {
@@ -150,7 +151,7 @@ class TimerManager {
     Run() {
         var idxExecutingSlotIdx = 0; var idxNextWheelSlotIdx = 0;
 
-        var currTimeMS = this.UTimerGetCurrentTimeMS();
+        var currTimeMS = this.UTimerGetCurrentTimeMS() / TIMER_MS_COUNTIII;
         var timerId = 0;
         while (currTimeMS >= this.qwCurrentTimeMS) {
             idxExecutingSlotIdx = this.qwCurrentTimeMS & TIMER_MASK;
@@ -215,6 +216,9 @@ class TimerManager {
             this.OnTimerError("CreateTimer AllocObj failed.");
             return false;
         }
+
+        qwDueTime /= TIMER_MS_COUNTIII;
+        qwPeriod /= TIMER_MS_COUNTIII;
 
         pTimer.qwPeriod = qwPeriod;
         pTimer.timerFn = timerFn;
