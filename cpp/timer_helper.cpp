@@ -1,5 +1,8 @@
 #include "timer_helper.h"
 
+#include<time.h>
+#include<stdexcept>
+
 TimerNode* __pFreeTimerHeadMem;
 int UniqsTimerAllocCalled = 0;
 int UniqsTimerFreeCalled = 0;

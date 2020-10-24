@@ -6,6 +6,8 @@
 
 #include "timer_helper.h"
 
+#include <thread>
+
 void LogicThread()
 {
 	srand((unsigned)UTimerGetCurrentTimeMS());
@@ -16,7 +18,7 @@ void LogicThread()
 	pMgr->CreateTimer(timerIdMotherMother, OnTimer, (void*)"mother", 100, 100);
 #endif
 
-	pMgrIII->CreateTimer(1, OnTimerIII, (void*)"timer LV III timer test", 500, 500);
+	pMgrIII->CreateTimer(1, OnTimerIII, (void*)"timer LV III timer test", 1000, 1000);
 
 	int64_t beginUS = 0;
 	int64_t endUS = 0;
@@ -33,7 +35,7 @@ void LogicThread()
 
 
 		currMS = UTimerGetCurrentTimeMS();
-		if (currMS - lastMS > 100)
+		if (currMS - lastMS >= 100)
 		{
 			//printf("pre pMgrIII->Run currMS:%llu\n", currMS);
 			pMgrIII->Run();
