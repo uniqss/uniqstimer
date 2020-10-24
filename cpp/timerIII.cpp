@@ -87,7 +87,7 @@ void TimerManagerIII::Run()
 		idxExecutingSlotIdx = this->qwCurrentTimeMS & TIMER_MASKIII;
 
 		idxNextWheelSlotIdx = idxExecutingSlotIdx;
-		for (TimerMsType i = 0; i < 4 && idxNextWheelSlotIdx == 0; i++)
+		for (TimerMsType i = 0; i < TIMER_WHEEL_COUNTIII - 1 && idxNextWheelSlotIdx == 0; i++)
 		{
 			idxNextWheelSlotIdx = (this->qwCurrentTimeMS >> ((i + 1) * TIMER_BITS_PER_WHEELIII)) & TIMER_MASKIII;
 			CascadeTimer(this, i + 1, idxNextWheelSlotIdx);

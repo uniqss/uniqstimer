@@ -34,6 +34,7 @@ TimerNode* AllocObj()
 void FreeObj(TimerNode* pTimer)
 {
 	UniqsTimerFreeCalled++;
+
 	UniqsTimerFreeCount++;
 	if (__pFreeTimerHeadMem == nullptr)
 	{
@@ -45,7 +46,6 @@ void FreeObj(TimerNode* pTimer)
 		pTimer->pNext = __pFreeTimerHeadMem;
 		__pFreeTimerHeadMem = pTimer;
 	}
-
 
 	if (UniqsTimerFreeCount > UNIQS_TIMER_CACHE_MAX)
 	{

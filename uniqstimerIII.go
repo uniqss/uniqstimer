@@ -36,7 +36,7 @@ func (this *TimerManagerIII) Run() {
 
 		idxNextWheelSlotIdx = idxExecutingSlotIdx
 		var i TimerMsTypeIII = 0
-		for ; i < 4 && idxNextWheelSlotIdx == 0; i++ {
+		for ; i < TIMER_WHEEL_COUNTIII - 1 && idxNextWheelSlotIdx == 0; i++ {
 			idxNextWheelSlotIdx = (this.qwCurrentTimeMS >> ((i + 1) * TIMER_BITS_PER_WHEELIII)) & TIMER_MASKIII
 			cascadeTimerIII(this, i+1, idxNextWheelSlotIdx)
 		}
