@@ -6,7 +6,7 @@ import (
 	"math/rand"
 	"os"
 	"time"
-	"uniqstimer"
+	"github.com/uniqss/uniqstimer"
 )
 
 var pMgr *uniqstimer.TimerManager = nil
