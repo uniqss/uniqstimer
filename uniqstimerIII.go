@@ -151,6 +151,12 @@ func (this *TimerManagerIII) KillTimer(timerId TimerIdType) bool {
 	return true
 }
 
+func (this *TimerManagerIII) KillAllTimers() {
+	for timerId, _ := range this.pTimers {
+		this.KillTimer(timerId)
+	}
+}
+
 // inner functions
 
 func addTimerIII(pTimerManager *TimerManagerIII, pTimer *_TimerNodeIII, fromWheelIdx TimerMsTypeIII, fromSlotIdx TimerMsTypeIII) {

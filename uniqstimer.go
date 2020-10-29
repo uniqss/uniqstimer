@@ -35,7 +35,7 @@ func (this *TimerManager) Run() {
 
 		idxNextWheelSlotIdx = idxExecutingSlotIdx
 		var i TimerMsType = 0
-		for ; i < TIMER_WHEEL_COUNT - 1 && idxNextWheelSlotIdx == 0; i++ {
+		for ; i < TIMER_WHEEL_COUNT-1 && idxNextWheelSlotIdx == 0; i++ {
 			idxNextWheelSlotIdx = (this.qwCurrentTimeMS >> ((i + 1) * TIMER_BITS_PER_WHEEL)) & TIMER_MASK
 			cascadeTimer(this, i+1, idxNextWheelSlotIdx)
 		}
@@ -145,6 +145,12 @@ func (this *TimerManager) KillTimer(timerId TimerIdType) bool {
 	delete(this.pTimers, timerId)
 
 	return true
+}
+
+func (this *TimerManager) KillAllTimers() {
+	for timerId, _ := range this.pTimers {
+		this.KillTimer(timerId)
+	}
 }
 
 // inner functions
