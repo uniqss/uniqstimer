@@ -34,6 +34,7 @@ public:
 	// qwDueTime: first timeout   qwPeriod: then periodic timeout.(0: one shot timer)
 	bool CreateTimer(TimerIdType timerId, void (*timerFn)(TimerIdType, void*), void* pParam, TimerMsType qwDueTime, TimerMsType qwPeriod);
 	bool KillTimer(TimerIdType timerId);
+	void KillAllTimers();
 
 public:
 	TimerMsType qwCurrentTimeMS; // current time ms

@@ -152,8 +152,12 @@ func (this *TimerManagerIII) KillTimer(timerId TimerIdType) bool {
 }
 
 func (this *TimerManagerIII) KillAllTimers() {
-	for timerId, _ := range this.pTimers {
-		this.KillTimer(timerId)
+	for _, pTimer := range this.pTimers {
+		pTimer.bRunning = false
+	}
+
+	for k := range this.pTimers {
+		delete(this.pTimers, k)
 	}
 }
 

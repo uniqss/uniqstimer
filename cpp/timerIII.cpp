@@ -224,3 +224,12 @@ bool TimerManagerIII::KillTimer(TimerIdType timerId)
 
 	return true;
 }
+
+void TimerManagerIII::KillAllTimers()
+{
+	for (auto it = this->pTimers.begin(); it != this->pTimers.end(); ++it)
+	{
+		it->second->bRunning = false;
+	}
+	this->pTimers.clear();
+}
