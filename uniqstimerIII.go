@@ -1,6 +1,6 @@
 package uniqstimer
 
-type TimerMsTypeIII int
+type TimerMsTypeIII int64
 
 const TIMER_BITS_PER_WHEELIII = 6
 const TIMER_SLOT_COUNT_PER_WHEELIII = 1 << TIMER_BITS_PER_WHEELIII
