@@ -34,3 +34,6 @@ TIMER有一个问题：如果频繁删除时间非常非常长的定时器，会
 测试先开一个根节点timer，然后在这个根节点的OnTimer里面创建母Timer，
 	再在母timer里面随机删除和创建定时器。
 测试有一定的时间误差，时间精度为100MS
+
+
+能使用uniqstimerIII的场合，尽量使用uniqstimerIII
