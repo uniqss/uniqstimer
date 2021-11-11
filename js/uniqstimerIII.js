@@ -8,15 +8,15 @@ const ADDTIMER_SOURCE_NEW = 1;
 const ADDTIMER_SOURCE_CASCADE = 2;
 const ADDTIMER_SOURCE_ONTIMER = 3;
 
-var __pFreeTimerHeadMem = undefined;
-var UniqsTimerFreeCount = 0;
+let __pFreeTimerHeadMem = undefined;
+let UniqsTimerFreeCount = 0;
 const UNIQS_TIMER_CACHE_MAX = 4096;
 const UNIQS_TIMER_CACHE_DELETE = UNIQS_TIMER_CACHE_MAX / 2;
 
 function AllocObj() {
-    if (__pFreeTimerHeadMem != undefined) {
+    if (__pFreeTimerHeadMem !== undefined) {
         UniqsTimerFreeCount--;
-        pTimer = __pFreeTimerHeadMem;
+        let pTimer = __pFreeTimerHeadMem;
         __pFreeTimerHeadMem = pTimer.pNext;
         pTimer.pNext = undefined;
         return pTimer;
@@ -25,7 +25,7 @@ function AllocObj() {
 }
 function FreeObj(pTimer) {
     UniqsTimerFreeCount++;
-    if (__pFreeTimerHeadMem == undefined) {
+    if (__pFreeTimerHeadMem === undefined) {
         __pFreeTimerHeadMem = pTimer;
         __pFreeTimerHeadMem.pNext = undefined;
     }
@@ -35,8 +35,8 @@ function FreeObj(pTimer) {
     }
 
     if (UniqsTimerFreeCount > UNIQS_TIMER_CACHE_MAX) {
-        var pDelete = __pFreeTimerHeadMem;
-        for (i = 0; i < UNIQS_TIMER_CACHE_DELETE; i++) {
+        let pDelete = __pFreeTimerHeadMem;
+        for (let i = 0; i < UNIQS_TIMER_CACHE_DELETE; i++) {
             __pFreeTimerHeadMem = pDelete.pNext;
 
             // free memory
@@ -48,19 +48,20 @@ function FreeObj(pTimer) {
     }
 }
 
-var AddTimer_EXCEED = Math.pow(2, TIMER_BITS_PER_WHEEL * TIMER_WHEEL_COUNT);
-function AddTimer(pTimerManager, pTimer, fromWheelIdx, fromSlotIdx, source) {
-    var wheelIdx = 0;
-    var slotIdx = 0;
+const AddTimer_EXCEED = Math.pow(2, TIMER_BITS_PER_WHEEL * TIMER_WHEEL_COUNT);
 
-    var qwExpires = pTimer.qwExpires;
-    var qwDueTime = qwExpires - pTimerManager.qwCurrentTimeMS;
+function AddTimer(pTimerManager, pTimer, fromWheelIdx, fromSlotIdx, source) {
+    let wheelIdx = 0;
+    let slotIdx = 0;
+
+    const qwExpires = pTimer.qwExpires;
+    const qwDueTime = qwExpires - pTimerManager.qwCurrentTimeMS;
 
     // console.log("AddTimer qwDueTime:", qwDueTime, " AddTimer_EXCEED:", AddTimer_EXCEED);
     if (qwDueTime < AddTimer_EXCEED) {
-        for (i = 0; i < TIMER_WHEEL_COUNT; i++) {
+        for (let i = 0; i < TIMER_WHEEL_COUNT; i++) {
             if (qwDueTime < Math.pow(2, TIMER_BITS_PER_WHEEL * (i + 1))) {
-                if (i == 0) {
+                if (i === 0) {
                     slotIdx = qwExpires & TIMER_MASK;
                 } else {
                     // slotIdx = Math.pow(qwExpires, 1 / (TIMER_BITS_PER_WHEEL * i)) & TIMER_MASK;
@@ -82,7 +83,7 @@ function AddTimer(pTimerManager, pTimer, fromWheelIdx, fromSlotIdx, source) {
     }
 
     // console.log(`AddTimer ${wheelIdx} ${slotIdx} qwExpires:${qwExpires} qwDueTime:${qwDueTime} ${pTimerManager.qwCurrentTimeMS} ${source}`);
-    if (pTimerManager.arrListTimerTail[wheelIdx][slotIdx] == undefined) {
+    if (pTimerManager.arrListTimerTail[wheelIdx][slotIdx] === undefined) {
         pTimerManager.arrListTimerHead[wheelIdx][slotIdx] = pTimer;
         pTimerManager.arrListTimerTail[wheelIdx][slotIdx] = pTimer;
         pTimer.pNext = undefined;
@@ -95,9 +96,9 @@ function AddTimer(pTimerManager, pTimer, fromWheelIdx, fromSlotIdx, source) {
 }
 
 function CascadeTimer(pTimerManager, wheelIdx, slotIdx) {
-    pTimer = pTimerManager.arrListTimerHead[wheelIdx][slotIdx];
-    pNext = undefined;
-    for (; pTimer != undefined; pTimer = pNext) {
+    let pTimer = pTimerManager.arrListTimerHead[wheelIdx][slotIdx];
+    let pNext = undefined;
+    for (; pTimer !== undefined; pTimer = pNext) {
         pNext = pTimer.pNext;
 
         if (pTimer.bRunning) {
@@ -131,12 +132,12 @@ class TimerManager {
         this.pTimers = new Map();
         this.arrListTimerHead = new Array();
         this.arrListTimerTail = new Array();
-        for (var wheelidx = 0; wheelidx < TIMER_WHEEL_COUNT; wheelidx++) {
-            this.arrListTimerHead[wheelidx] = new Array();
-            this.arrListTimerTail[wheelidx] = new Array();
-            for (var slotIdx = 0; slotIdx < TIMER_SLOT_COUNT_PER_WHEEL; slotIdx++) {
-                this.arrListTimerHead[wheelidx][slotIdx] = undefined;
-                this.arrListTimerTail[wheelidx][slotIdx] = undefined;
+        for (let wheelIdx = 0; wheelIdx < TIMER_WHEEL_COUNT; wheelIdx++) {
+            this.arrListTimerHead[wheelIdx] = new Array();
+            this.arrListTimerTail[wheelIdx] = new Array();
+            for (let slotIdx = 0; slotIdx < TIMER_SLOT_COUNT_PER_WHEEL; slotIdx++) {
+                this.arrListTimerHead[wheelIdx][slotIdx] = undefined;
+                this.arrListTimerTail[wheelIdx][slotIdx] = undefined;
             }
         }
         this.qwCurrentTimeMS = this.UTimerGetCurrentTimeMS() / TIMER_MS_COUNTIII;
@@ -149,39 +150,40 @@ class TimerManager {
         console.log(`OnTimerError str:${str}`);
     }
     Run() {
-        var idxExecutingSlotIdx = 0; var idxNextWheelSlotIdx = 0;
+        let idxExecutingSlotIdx = 0;
+        let idxNextWheelSlotIdx = 0;
 
-        var currTimeMS = this.UTimerGetCurrentTimeMS() / TIMER_MS_COUNTIII;
-        var timerId = 0;
+        const currTimeMS = this.UTimerGetCurrentTimeMS() / TIMER_MS_COUNTIII;
+        let timerId = 0;
         while (currTimeMS >= this.qwCurrentTimeMS) {
             idxExecutingSlotIdx = this.qwCurrentTimeMS & TIMER_MASK;
             // console.log(`Run idxExecutingSlotIdx:${idxExecutingSlotIdx}`);
 
             idxNextWheelSlotIdx = idxExecutingSlotIdx;
-            for (i = 0; i < TIMER_WHEEL_COUNT - 1 && idxNextWheelSlotIdx == 0; i++) {
+            for (let i = 0; i < TIMER_WHEEL_COUNT - 1 && idxNextWheelSlotIdx === 0; i++) {
                 // idxNextWheelSlotIdx = Math.pow(this.qwCurrentTimeMS, 1 / ((i + 1) * TIMER_BITS_PER_WHEEL)) & TIMER_MASK;
                 idxNextWheelSlotIdx = this.qwCurrentTimeMS / Math.pow(2, (i + 1) * TIMER_BITS_PER_WHEEL) & TIMER_MASK;
                 // console.log(`Run CascadeTimer ${i + 1} ${idxNextWheelSlotIdx} ${this.qwCurrentTimeMS}`);
                 CascadeTimer(this, i + 1, idxNextWheelSlotIdx);
             }
 
-            pTimer = this.arrListTimerHead[0][idxExecutingSlotIdx];
-            pNext = undefined;
+            let pTimer = this.arrListTimerHead[0][idxExecutingSlotIdx];
+            let pNext = undefined;
 
             // if (pTimer != undefined) console.log(`Run  executing 0 ${idxExecutingSlotIdx}`);
 
-            for (; pTimer != undefined; pTimer = pNext) {
+            for (; pTimer !== undefined; pTimer = pNext) {
                 pNext = pTimer.pNext;
 
                 timerId = pTimer.qwTimerId;
                 if (pTimer.bRunning) {
                     pTimer.timerFn(pTimer.qwTimerId, pTimer.pParam);
-                    if (pTimer.qwPeriod != 0) {
+                    if (pTimer.qwPeriod !== 0) {
                         pTimer.qwExpires = this.qwCurrentTimeMS + pTimer.qwPeriod;
                         AddTimer(this, pTimer, 0, idxExecutingSlotIdx, ADDTIMER_SOURCE_ONTIMER);
                     } else {
                         FreeObj(pTimer);
-                        this.pTimers.erase(timerId);
+                        this.pTimers.delete(timerId);
                     }
                 } else {
                     FreeObj(pTimer);
@@ -194,16 +196,16 @@ class TimerManager {
         }
     }
     CreateTimer(timerId, timerFn, pParam, qwDueTime, qwPeriod) {
-        if (undefined == timerFn)
+        if (undefined === timerFn)
             return false;
 
         // 两者都为0,无意义
-        if (qwDueTime == 0 && qwPeriod == 0) {
+        if (qwDueTime === 0 && qwPeriod === 0) {
             return false;
         }
 
         // 如果创建重复性定时器，又设置触发时间为0,就直接把时间设置为重复时间
-        if (qwDueTime == 0) {
+        if (qwDueTime === 0) {
             return false;
         }
 
@@ -211,8 +213,8 @@ class TimerManager {
             return false;
         }
 
-        var pTimer = AllocObj();
-        if (pTimer == undefined) {
+        const pTimer = AllocObj();
+        if (pTimer === undefined) {
             this.OnTimerError("CreateTimer AllocObj failed.");
             return false;
         }
@@ -235,8 +237,8 @@ class TimerManager {
         return true;
     }
     KillTimer(timerId) {
-        var pTimer = this.pTimers.get(timerId);
-        if (pTimer == undefined) {
+        const pTimer = this.pTimers.get(timerId);
+        if (pTimer === undefined) {
             return false;
         }
         if (!pTimer.bRunning) {
@@ -244,11 +246,13 @@ class TimerManager {
         }
 
         pTimer.bRunning = false;
-        this.pTimers.delete(it);
+        this.pTimers.delete(timerId);
 
         return true;
     }
 };
 
 TimerManager.instance = new TimerManager();
-export default TimerManager.instance;
+// export default TimerManager.instance;
+
+module.exports = TimerManager.instance;
