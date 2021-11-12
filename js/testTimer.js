@@ -1,4 +1,11 @@
-const TimerManagerIII = require('./uniqstimerIII');
+let TimerManagerIII = require('./uniqstimerIII');
+let updateInterval = 100;
+
+if (1 === 1) {
+} else {
+    TimerManagerIII = require('./uniqstimer');
+    updateInterval = 1;
+}
 
 const LoadAlarmFromDBSeconds = 1;
 const WorkWheelCfgs = [
@@ -52,17 +59,37 @@ function sleep(ms) {
 }
 
 async function DoAnalysis() {
-    TimerManagerIII.CreateTimer(12345, async () => {
-        await loadEventsFromDB();
-    }, null, LoadAlarmFromDBSeconds * 1000, LoadAlarmFromDBSeconds * 1000);
+    if (1 === 0) {
+        TimerManagerIII.CreateTimer(12345, async () => {
+            await loadEventsFromDB();
+        }, null, LoadAlarmFromDBSeconds * 1000, LoadAlarmFromDBSeconds * 1000);
 
-    // await sleep(1000);
+        // await sleep(1000);
 
-    WorkWheelCfgs.forEach((cfg) => {
-        TimerManagerIII.CreateTimer(1111, async () => {
-            await tickWork(cfg);
-        }, null, cfg.reportIntervalSeconds * 1000, cfg.reportIntervalSeconds * 1000);
-    });
+        WorkWheelCfgs.forEach((cfg) => {
+            TimerManagerIII.CreateTimer(cfg.workWheelLevel, async () => {
+                await tickWork(cfg);
+            }, null, cfg.reportIntervalSeconds * 1000, cfg.reportIntervalSeconds * 1000);
+        });
+    }
+
+    if (1 === 1) {
+        let count = 0;
+        const testDelCreateKey = 55555;
+        TimerManagerIII.CreateTimer(testDelCreateKey, () => {
+            console.log(`aaaaa testDelCreateKey:${testDelCreateKey}, count:${count}`);
+            count++;
+            if (count >= 3){
+                const delok = TimerManagerIII.KillTimer(testDelCreateKey);
+                console.log(`delok:${delok}`);
+                const createOk = TimerManagerIII.CreateTimer(testDelCreateKey, ()=> {
+                    console.log(`bbbbb testDelCreateKey:${testDelCreateKey}, count:${count}`);
+                    count++;
+                }, null, 1 * 1000, 1 * 1000)
+                console.log(`createOk:${createOk}`);
+            }
+        }, null, 1 * 1000, 1 * 1000);
+    }
 }
 
 
@@ -72,9 +99,9 @@ let lastTime = Date.now();
 setInterval(() => {
     let currTime = Date.now();
     let diff = currTime - lastTime;
-    while(diff > 100){
+    while(diff > updateInterval){
         TimerManagerIII.Run();
-        diff -= 100;
+        diff -= updateInterval;
     }
     lastTime = currTime - diff;
 }, 1);

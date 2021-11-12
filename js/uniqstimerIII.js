@@ -232,16 +232,18 @@ class TimerManager {
         pTimer.qwExpires = this.qwCurrentTimeMS + qwDueTime;
         // console.log(`CreateTimer ${timerId} qwDueTime:${qwDueTime} qwPeriod:${qwPeriod} this.qwCurrentTimeMS:${this.qwCurrentTimeMS} pTimer.qwExpires:${pTimer.qwExpires}`);
         AddTimer(this, pTimer, 0, 0, ADDTIMER_SOURCE_NEW);
-        this.pTimers[timerId] = pTimer;
+        this.pTimers.set(timerId, pTimer);
 
         return true;
     }
     KillTimer(timerId) {
         const pTimer = this.pTimers.get(timerId);
         if (pTimer === undefined) {
+            // console.log(`KillTimer ${timerId} pTimer === undefined`);
             return false;
         }
         if (!pTimer.bRunning) {
+            // console.log(`KillTimer ${timerId} !pTimer.bRunning`);
             return false;
         }
 
