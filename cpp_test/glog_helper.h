@@ -1,6 +1,6 @@
 #pragma once
 
-#if defined(WIN32)||defined(WINDOWS)||defined(_WIN32)
+#if defined(WIN32) || defined(WINDOWS) || defined(_WIN32)
 #define GLOG_SYSTEM_TYPE_WINDOWS
 #else
 #define GLOG_SYSTEM_TYPE_LINUX
@@ -22,18 +22,17 @@
 #define GLOG_NO_ABBREVIATED_SEVERITIES
 #include "glog/logging.h"
 
-#include<chrono>
-#include<vector>
-#include<string>
+#include <chrono>
+#include <vector>
+#include <string>
 using namespace std;
 
 
 #ifdef GLOG_SYSTEM_TYPE_WINDOWS
 
 #else
-bool dirExists(const std::string& dirName_in)
-{
-	return access(dirName_in.c_str(), F_OK) == 0;
+bool dirExists(const std::string& dirName_in) {
+    return access(dirName_in.c_str(), F_OK) == 0;
 }
 #endif
 
