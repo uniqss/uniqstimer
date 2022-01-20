@@ -10,3 +10,13 @@ void OnTimerIII(TimerIdType timerId, void* pParam) {
 
     printf("OnTimerIII timerId:%lld pszStr:%s currMS:%lld\n", timerId, pszStr, currTimeMS);
 }
+
+
+void OnTimerIIIPressureTest(TimerIdType timerId, void* pParam) {
+    //const char* pszStr = (const char*)pParam;
+    ++FrameOnTimerCalled;
+    ++OnTimerCount;
+    //int64_t currTimeMS = UTimerGetCurrentTimeMS();
+
+    //printf("OnTimerIII timerId:%lld pszStr:%s currMS:%lld\n", timerId, pszStr, currTimeMS);
+}

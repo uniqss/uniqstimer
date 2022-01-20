@@ -200,7 +200,7 @@ void OnTimer(TimerIdType timerId, void* pParam) {
         auto percent = (OnTimerTotalUS)*100 / RunTotalUS;
         auto av = OnTimerCount / RunCount;
 
-#if 0
+#if 1
 		printf("Timers:%d FOT:%llu OnTimerTriggered:%llu Alloced:%d Freeed:%d FreeM:%d Over1MS:%d RunAvUS:%llu OnTimer:%llu|%llu|%llu|%llu\n"
 			, RunningTimersCount, FrameOnTimerCalled, OnTimerTriggered, UniqsTimerAllocCalled, UniqsTimerFreeCalled, UniqsTimerFreeCount, RunExceed1MSCount, RunAverageUS
 			, OnTimerTotalUS, OnTimerCount, OnTimerAverageUS, percent);
@@ -259,7 +259,6 @@ TimerMsType UTimerGetCurrentTimeUS(void) {
 #endif
 }
 
-#define TIMERCOUNT 512
 int main(int argc, const char** argv) {
     init_glog(argv[0], "./logs");
     arrTestRandTimerInfos.resize(timerIdRandCount);
@@ -280,6 +279,14 @@ int main(int argc, const char** argv) {
         if (input == "exit" || input == "e") {
             bWorking = false;
             break;
+        }
+        if (input == "p" || input == "print") {
+#if 1
+            printf("FrameOnTimerCalled:%llu RunExceed1MSCount:%d RunAverageUS:%llu OnTimerTotalUS:%llu OnTimerCount:%llu\n",
+                   FrameOnTimerCalled, RunExceed1MSCount, RunAverageUS, OnTimerTotalUS,
+                   OnTimerCount);
+#endif
+            continue;
         }
     }
 

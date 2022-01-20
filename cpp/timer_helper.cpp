@@ -95,6 +95,11 @@ TimerMsType UTimerGetCurrentTimeMS(void) {
     return clock();
 }
 
+#include <iostream>
 void OnTimerError(const std::string& err) {
+    #if 0
     throw std::logic_error("OnTimerError" + err);
+    #else
+    std::cout << err << std::endl;
+    #endif
 }
