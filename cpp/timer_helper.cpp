@@ -17,7 +17,7 @@ const int UNIQS_TIMER_CACHE_MAXIII = 4096;
 const int UNIQS_TIMER_CACHE_DELETEIII = UNIQS_TIMER_CACHE_MAXIII / 2;
 
 TimerNode* AllocObj() {
-    UniqsTimerAllocCalled++;
+    ++UniqsTimerAllocCalled;
 
     if (__pFreeTimerHeadMem != nullptr) {
         UniqsTimerFreeCount--;
@@ -30,9 +30,9 @@ TimerNode* AllocObj() {
     return ret;
 }
 void FreeObj(TimerNode* pTimer) {
-    UniqsTimerFreeCalled++;
+    ++UniqsTimerFreeCalled;
 
-    UniqsTimerFreeCount++;
+    ++UniqsTimerFreeCount;
     if (__pFreeTimerHeadMem == nullptr) {
         __pFreeTimerHeadMem = pTimer;
         __pFreeTimerHeadMem->pNext = nullptr;
@@ -43,7 +43,7 @@ void FreeObj(TimerNode* pTimer) {
 
     if (UniqsTimerFreeCount > UNIQS_TIMER_CACHE_MAX) {
         TimerNode* pDelete = __pFreeTimerHeadMem;
-        for (int i = 0; i < UNIQS_TIMER_CACHE_DELETE; i++) {
+        for (int i = 0; i < UNIQS_TIMER_CACHE_DELETE; ++i) {
             __pFreeTimerHeadMem = pDelete->pNext;
 
             // free memory
@@ -67,7 +67,7 @@ TimerNodeIII* AllocObjIII() {
     return ret;
 }
 void FreeObjIII(TimerNodeIII* pTimer) {
-    UniqsTimerFreeCountIII++;
+    ++UniqsTimerFreeCountIII;
     if (__pFreeTimerHeadMemIII == nullptr) {
         __pFreeTimerHeadMemIII = pTimer;
         __pFreeTimerHeadMemIII->pNext = nullptr;
@@ -79,7 +79,7 @@ void FreeObjIII(TimerNodeIII* pTimer) {
 
     if (UniqsTimerFreeCountIII > UNIQS_TIMER_CACHE_MAXIII) {
         TimerNodeIII* pDelete = __pFreeTimerHeadMemIII;
-        for (int i = 0; i < UNIQS_TIMER_CACHE_DELETEIII; i++) {
+        for (int i = 0; i < UNIQS_TIMER_CACHE_DELETEIII; ++i) {
             __pFreeTimerHeadMemIII = pDelete->pNext;
 
             // free memory

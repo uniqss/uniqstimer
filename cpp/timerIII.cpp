@@ -16,7 +16,7 @@ static void AddTimer(TimerManagerIII* pTimerManager, TimerNodeIII* pTimer, Timer
     TimerMsTypeIII qwDueTime = qwExpires - pTimerManager->qwCurrentTimeMS;
 
     if (qwDueTime < TimerMsTypeIII(1) << (TIMER_BITS_PER_WHEELIII * (TIMER_WHEEL_COUNTIII))) {
-        for (TimerMsTypeIII i = 0; i < TIMER_WHEEL_COUNT; i++) {
+        for (TimerMsTypeIII i = 0; i < TIMER_WHEEL_COUNT; ++i) {
             if (qwDueTime < TimerMsTypeIII(1) << (TIMER_BITS_PER_WHEELIII * (i + 1))) {
                 slotIdx = (qwExpires >> (TIMER_BITS_PER_WHEELIII * i)) & TIMER_MASKIII;
                 wheelIdx = i;
@@ -68,7 +68,7 @@ void TimerManagerIII::Run() {
         idxExecutingSlotIdx = this->qwCurrentTimeMS & TIMER_MASKIII;
 
         idxNextWheelSlotIdx = idxExecutingSlotIdx;
-        for (TimerMsType i = 0; i < TIMER_WHEEL_COUNTIII - 1 && idxNextWheelSlotIdx == 0; i++) {
+        for (TimerMsType i = 0; i < TIMER_WHEEL_COUNTIII - 1 && idxNextWheelSlotIdx == 0; ++i) {
             idxNextWheelSlotIdx = (this->qwCurrentTimeMS >> ((i + 1) * TIMER_BITS_PER_WHEELIII)) & TIMER_MASKIII;
             CascadeTimer(this, i + 1, idxNextWheelSlotIdx);
         }
@@ -95,13 +95,13 @@ void TimerManagerIII::Run() {
         this->arrListTimerHead[0][idxExecutingSlotIdx] = nullptr;
         this->arrListTimerTail[0][idxExecutingSlotIdx] = nullptr;
 
-        this->qwCurrentTimeMS++;
+        ++this->qwCurrentTimeMS;
     }
 }
 
 TimerManagerIII::TimerManagerIII() {
-    for (auto wheelIdx = 0; wheelIdx < TIMER_WHEEL_COUNTIII; wheelIdx++) {
-        for (auto slotIdx = 0; slotIdx < TIMER_SLOT_COUNT_PER_WHEELIII; slotIdx++) {
+    for (auto wheelIdx = 0; wheelIdx < TIMER_WHEEL_COUNTIII; ++wheelIdx) {
+        for (auto slotIdx = 0; slotIdx < TIMER_SLOT_COUNT_PER_WHEELIII; ++slotIdx) {
             this->arrListTimerHead[wheelIdx][slotIdx] = nullptr;
             this->arrListTimerTail[wheelIdx][slotIdx] = nullptr;
         }
@@ -111,8 +111,8 @@ TimerManagerIII::TimerManagerIII() {
 }
 
 TimerManagerIII::~TimerManagerIII() {
-    for (auto wheelIdx = 0; wheelIdx < TIMER_WHEEL_COUNTIII; wheelIdx++) {
-        for (auto slotIdx = 0; slotIdx < TIMER_SLOT_COUNT_PER_WHEELIII; slotIdx++) {
+    for (auto wheelIdx = 0; wheelIdx < TIMER_WHEEL_COUNTIII; ++wheelIdx) {
+        for (auto slotIdx = 0; slotIdx < TIMER_SLOT_COUNT_PER_WHEELIII; ++slotIdx) {
             TimerNodeIII* pTimer = this->arrListTimerHead[wheelIdx][slotIdx];
             TimerNodeIII* pNext = nullptr;
             for (; pTimer != nullptr; pTimer = pNext) {
