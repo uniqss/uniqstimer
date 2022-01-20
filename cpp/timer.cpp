@@ -8,7 +8,7 @@
 #include <cassert>
 #include <time.h>
 
-static void AddTimer(TimerManager* pTimerManager, TimerNode* pTimer, TimerMsType fromWheelIdx, TimerMsType fromSlotIdx) {
+static void AddTimer(TimerManager* pTimerManager, TimerNode* pTimer) {
     TimerMsType wheelIdx = 0;
     TimerMsType slotIdx = 0;
 
@@ -50,7 +50,7 @@ static void CascadeTimer(TimerManager* pTimerManager, TimerMsType wheelIdx, Time
         pNext = pTimer->pNext;
 
         if (pTimer->bRunning) {
-            AddTimer(pTimerManager, pTimer, wheelIdx, slotIdx);
+            AddTimer(pTimerManager, pTimer);
         } else {
             FreeObj(pTimer);
         }
@@ -83,7 +83,7 @@ void TimerManager::Run() {
                 pTimer->timerFn(pTimer->qwTimerId, pTimer->pParam);
                 if (pTimer->qwPeriod != 0) {
                     pTimer->qwExpires = this->qwCurrentTimeMS + pTimer->qwPeriod;
-                    AddTimer(this, pTimer, 0, idxExecutingSlotIdx);
+                    AddTimer(this, pTimer);
                 } else {
                     FreeObj(pTimer);
                     this->pTimers.erase(timerId);
@@ -156,7 +156,7 @@ bool TimerManager::CreateTimer(TimerIdType timerId, void (*timerFn)(TimerIdType,
     pTimer->bRunning = true;
 
     pTimer->qwExpires = this->qwCurrentTimeMS + qwDueTime;
-    AddTimer(this, pTimer, 0, 0);
+    AddTimer(this, pTimer);
     this->pTimers[timerId] = pTimer;
 
     return true;

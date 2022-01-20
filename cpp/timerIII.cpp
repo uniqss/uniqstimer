@@ -8,7 +8,7 @@
 #include <cassert>
 #include <time.h>
 
-static void AddTimer(TimerManagerIII* pTimerManager, TimerNodeIII* pTimer, TimerMsTypeIII fromWheelIdx, TimerMsTypeIII fromSlotIdx) {
+static void AddTimer(TimerManagerIII* pTimerManager, TimerNodeIII* pTimer) {
     TimerMsTypeIII wheelIdx = 0;
     TimerMsTypeIII slotIdx = 0;
 
@@ -50,7 +50,7 @@ static void CascadeTimer(TimerManagerIII* pTimerManager, TimerMsTypeIII wheelIdx
         pNext = pTimer->pNext;
 
         if (pTimer->bRunning) {
-            AddTimer(pTimerManager, pTimer, wheelIdx, slotIdx);
+            AddTimer(pTimerManager, pTimer);
         } else {
             FreeObjIII(pTimer);
         }
@@ -83,7 +83,7 @@ void TimerManagerIII::Run() {
                 pTimer->timerFn(pTimer->qwTimerId, pTimer->pParam);
                 if (pTimer->qwPeriod != 0) {
                     pTimer->qwExpires = this->qwCurrentTimeMS + pTimer->qwPeriod;
-                    AddTimer(this, pTimer, 0, idxExecutingSlotIdx);
+                    AddTimer(this, pTimer);
                 } else {
                     FreeObjIII(pTimer);
                     this->pTimers.erase(timerId);
@@ -159,7 +159,7 @@ bool TimerManagerIII::CreateTimer(TimerIdType timerId, void (*timerFn)(TimerIdTy
     pTimer->bRunning = true;
 
     pTimer->qwExpires = this->qwCurrentTimeMS + qwDueTime;
-    AddTimer(this, pTimer, 0, 0);
+    AddTimer(this, pTimer);
     this->pTimers[timerId] = pTimer;
 
     return true;

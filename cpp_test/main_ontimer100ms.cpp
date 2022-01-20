@@ -8,5 +8,5 @@ void OnTimerIII(TimerIdType timerId, void* pParam) {
     ++OnTimerCount;
     int64_t currTimeMS = UTimerGetCurrentTimeMS();
 
-    printf("OnTimerIII timerId:%d pszStr:%s currMS:%d\n", timerId, pszStr, currTimeMS);
+    printf("OnTimerIII timerId:%lld pszStr:%s currMS:%lld\n", timerId, pszStr, currTimeMS);
 }

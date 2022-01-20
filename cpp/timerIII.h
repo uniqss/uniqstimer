@@ -5,7 +5,7 @@
 
 #include "timer_def.h"
 
-#define TimerMsTypeIII int
+#define TimerMsTypeIII int64_t
 
 #define TIMER_BITS_PER_WHEELIII 6
 #define TIMER_SLOT_COUNT_PER_WHEELIII 1 << TIMER_BITS_PER_WHEELIII
