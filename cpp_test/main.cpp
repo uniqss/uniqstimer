@@ -25,8 +25,8 @@
 
 TimerIdType timerIdMotherCurr = timerIdMotherStart;
 
-TimerManager* pMgr;
-TimerManagerIII* pMgrIII;
+std::unique_ptr<TimerManager> pMgr;
+std::unique_ptr<TimerManagerIII> pMgrIII;
 bool bWorking = true;
 bool bTerminateOk = false;
 int RunExceed1MSCount = 0;
@@ -268,8 +268,8 @@ int main(int argc, const char** argv) {
     auto s = currMS / 1000;
     printf("main start. s:%llu ms:%llu \n", s, ms);
 
-    pMgr = new TimerManager();
-    pMgrIII = new TimerManagerIII();
+    pMgr = std::unique_ptr<TimerManager>(new TimerManager());
+    pMgrIII = std::unique_ptr<TimerManagerIII>(new TimerManagerIII());
 
     std::thread t(LogicThread);
     t.detach();
@@ -286,12 +286,6 @@ int main(int argc, const char** argv) {
     while (!bTerminateOk) {
         std::this_thread::sleep_for(std::chrono::microseconds(500));
     }
-
-    delete pMgr;
-    pMgr = nullptr;
-
-    delete pMgrIII;
-    pMgrIII = nullptr;
 
     google::ShutdownGoogleLogging();
     return 0;

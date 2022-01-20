@@ -23,6 +23,11 @@ class TimerNode {
     bool bRunning;
 };
 
+class ITimerNodeAllocator {
+   public:
+   
+};
+
 class TimerManager {
    public:
     TimerManager();

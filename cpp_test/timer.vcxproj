@@ -152,7 +152,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>.</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>...\cpp;$(ProjectDir)\..\cpp\</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -204,25 +204,25 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\cpp\timer.h" />
+    <ClInclude Include="..\cpp\timerIII.h" />
+    <ClInclude Include="..\cpp\timer_def.h" />
+    <ClInclude Include="..\cpp\timer_helper.h" />
     <ClInclude Include="fake_rand.h" />
     <ClInclude Include="glog_helper.h" />
     <ClInclude Include="main.h" />
     <ClInclude Include="mersenne_rand.h" />
-    <ClInclude Include="timer.h" />
-    <ClInclude Include="timerIII.h" />
-    <ClInclude Include="timer_def.h" />
-    <ClInclude Include="timer_helper.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\cpp\timer.cpp" />
+    <ClCompile Include="..\cpp\timerIII.cpp" />
+    <ClCompile Include="..\cpp\timer_helper.cpp" />
     <ClCompile Include="fake_rand.cpp" />
     <ClCompile Include="glog_helper.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="main_logicthread.cpp" />
     <ClCompile Include="main_ontimer100ms.cpp" />
     <ClCompile Include="mersenne_rand.cpp" />
-    <ClCompile Include="timer.cpp" />
-    <ClCompile Include="timerIII.cpp" />
-    <ClCompile Include="timer_helper.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
