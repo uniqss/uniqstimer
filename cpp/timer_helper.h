@@ -20,4 +20,7 @@ class TimerNodeAllocator {
 
 int64_t UTimerGetCurrentTimeMS(void);
 int64_t UTimerGetCurrentTimeUS(void);
+
+uint32_t GetTickCount32MS();
+
 void OnTimerError(const std::string& err);

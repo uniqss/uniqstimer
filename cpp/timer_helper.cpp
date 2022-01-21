@@ -107,6 +107,16 @@ int64_t UTimerGetCurrentTimeUS(void) {
 #endif
 }
 
+uint32_t GetTickCount32MS() {
+#ifdef WIN32
+    return ::GetTickCount();
+#else
+    struct timespec ts = {0};
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    return (ts.tv_sec * 1000 + ts.tv_nsec / 1000000);
+#endif
+}
+
 #include <iostream>
 void OnTimerError(const std::string& err) {
 #if 0

@@ -11,6 +11,7 @@
 #include <cstdio>
 
 #if defined(WIN32) || defined(_WIN32) || defined(WINDOWS)
+#include <Windows.h>
 static void usleep(int64_t usec) {
     std::this_thread::sleep_for(std::chrono::microseconds(usec));
 }
