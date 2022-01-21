@@ -9,7 +9,15 @@
 
 #include <thread>
 #include <cstdio>
+
+#if defined(WIN32) || defined(_WIN32) || defined(WINDOWS)
+static void usleep(int64_t usec) {
+    std::this_thread::sleep_for(std::chrono::microseconds(usec));
+}
+#else
 #include <unistd.h>
+#endif  // defined(WIN32) || defined(_WIN32) || defined(WINDOWS)
+
 
 void LogicThread() {
     srand((unsigned)UTimerGetCurrentTimeMS());
@@ -51,17 +59,9 @@ void LogicThread() {
                 exceedCount = 0;
                 tmpDiffSum = 0;
             }
-#if 0
-        std::this_thread::sleep_for(std::chrono::microseconds(10));
-#else
             usleep(10);
-#endif
         } else {
-#if 0
-        std::this_thread::sleep_for(std::chrono::microseconds(10));
-#else
             usleep(20);
-#endif
         }
     }
     bTerminateOk = true;

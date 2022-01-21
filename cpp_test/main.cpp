@@ -55,9 +55,14 @@ class TestRandTimerInfo {
 
 std::vector<TestRandTimerInfo> arrTestRandTimerInfos;
 
+#define GPERFTOOLS_PROFIE 0
+#if GPERFTOOLS_PROFIE
 #include <gperftools/profiler.h>
+#endif
 int main(int argc, const char** argv) {
-    ProfilerStart("uniqstimer.prof");
+#if GPERFTOOLS_PROFIE
+// ProfilerStart("uniqstimer.prof");
+#endif
     arrTestRandTimerInfos.resize(timerIdRandCount);
     auto currMS = UTimerGetCurrentTimeMS();
     auto ms = currMS % 1000;
@@ -99,7 +104,9 @@ int main(int argc, const char** argv) {
     }
 
 
+#if GPERFTOOLS_PROFIE
     ProfilerStop();
+#endif
 
     return 0;
 }

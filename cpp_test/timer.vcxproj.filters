@@ -27,9 +27,6 @@
     <ClInclude Include="..\cpp\timer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\cpp\timer_def.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\cpp\timer_helper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -50,13 +47,7 @@
     <ClCompile Include="main_ontimer100ms.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\cpp\timer.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\cpp\timer_helper.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\cpp\timerIII.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="main_ontimer1ms.cpp">

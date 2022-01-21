@@ -206,15 +206,12 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="..\cpp\timer.h" />
-    <ClInclude Include="..\cpp\timer_def.h" />
     <ClInclude Include="..\cpp\timer_helper.h" />
     <ClInclude Include="fake_rand.h" />
     <ClInclude Include="main.h" />
     <ClInclude Include="mersenne_rand.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\cpp\timer.cpp" />
-    <ClCompile Include="..\cpp\timerIII.cpp" />
     <ClCompile Include="..\cpp\timer_helper.cpp" />
     <ClCompile Include="fake_rand.cpp" />
     <ClCompile Include="main.cpp" />
