@@ -10,10 +10,10 @@ class TimerNodeAllocator {
     TimerNode* AllocObj();
     void FreeObj(TimerNode* pTimer);
 
-    int UniqsTimerAllocCalled;
-    int UniqsTimerFreeCalled;
-    TimerNode* __pFreeTimerHeadMem;
-    int UniqsTimerFreeCount;
+    int TimerAllocCalled_;
+    int TimerFreeCalled_;
+    TimerNode* pFreeTimerHeadMem_;
+    int TimerFreeCount_;
     const int UNIQS_TIMER_CACHE_MAX;
     const int UNIQS_TIMER_CACHE_DELETE;
 };
