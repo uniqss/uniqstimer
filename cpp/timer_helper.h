@@ -1,10 +1,22 @@
 #pragma once
 
-#include "timer.h"
 #include <string>
 
-TimerNode* AllocObj();
-void FreeObj(TimerNode* pTimer);
+class TimerNode;
+class TimerNodeAllocator {
+   public:
+    TimerNodeAllocator();
+    ~TimerNodeAllocator();
+    TimerNode* AllocObj();
+    void FreeObj(TimerNode* pTimer);
+
+    int UniqsTimerAllocCalled;
+    int UniqsTimerFreeCalled;
+    TimerNode* __pFreeTimerHeadMem;
+    int UniqsTimerFreeCount;
+    const int UNIQS_TIMER_CACHE_MAX;
+    const int UNIQS_TIMER_CACHE_DELETE;
+};
 
 int64_t UTimerGetCurrentTimeMS(void);
 int64_t UTimerGetCurrentTimeUS(void);

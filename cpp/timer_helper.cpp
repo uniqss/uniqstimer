@@ -1,17 +1,22 @@
 #include "timer_helper.h"
 
+#include "timer.h"
+
 #include <time.h>
 #include <stdexcept>
 
-int UniqsTimerAllocCalled = 0;
-int UniqsTimerFreeCalled = 0;
+TimerNodeAllocator::TimerNodeAllocator()
+    : UniqsTimerAllocCalled(0), UniqsTimerFreeCalled(0), __pFreeTimerHeadMem(nullptr), UniqsTimerFreeCount(0), UNIQS_TIMER_CACHE_MAX(4096), UNIQS_TIMER_CACHE_DELETE(2048) {}
+TimerNodeAllocator::~TimerNodeAllocator() {
+    TimerNode* tmp = nullptr;
+    while (__pFreeTimerHeadMem != nullptr) {
+        tmp = __pFreeTimerHeadMem;
+        __pFreeTimerHeadMem = __pFreeTimerHeadMem->pNext;
+        delete (tmp);
+    }
+}
 
-TimerNode* __pFreeTimerHeadMem;
-int UniqsTimerFreeCount = 0;
-const int UNIQS_TIMER_CACHE_MAX = 4096;
-const int UNIQS_TIMER_CACHE_DELETE = UNIQS_TIMER_CACHE_MAX / 2;
-
-TimerNode* AllocObj() {
+TimerNode* TimerNodeAllocator::AllocObj() {
     ++UniqsTimerAllocCalled;
 
     if (__pFreeTimerHeadMem != nullptr) {
@@ -24,7 +29,7 @@ TimerNode* AllocObj() {
     auto ret = new TimerNode();
     return ret;
 }
-void FreeObj(TimerNode* pTimer) {
+void TimerNodeAllocator::FreeObj(TimerNode* pTimer) {
     ++UniqsTimerFreeCalled;
 
     ++UniqsTimerFreeCount;

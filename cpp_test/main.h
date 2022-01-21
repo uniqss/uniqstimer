@@ -11,8 +11,8 @@ const TimerIdType timerIdMotherStop = timerIdMotherStart + timerIdMotherCount;
 const TimerIdType timerIdRandStart = 10000000;
 const TimerIdType timerIdRandCount = 100000;
 
-extern std::unique_ptr<TimerManager> pMgr;
-extern std::unique_ptr<TimerManager> pMgrIII;
+extern std::unique_ptr<TimerManager<>> pMgr;
+extern std::unique_ptr<TimerManager<>> pMgrIII;
 
 extern bool bWorking;
 extern bool bTerminateOk;
@@ -30,4 +30,3 @@ void OnTimerIIIPressureTest(TimerIdType timerId, void* pParam);
 void OnTimerPressureTest(TimerIdType timerId, void* pParam);
 void LogicThread();
 void LogicThreadIII();
-TimerMsType UTimerGetCurrentTimeUS(void);
