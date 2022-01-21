@@ -1,5 +1,5 @@
 ﻿#include <stdio.h>
-#include "Timer.h"
+#include "timer.h"
 #include <iostream>
 #include <vector>
 #include <string>

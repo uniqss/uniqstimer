@@ -1,6 +1,6 @@
 #include "fake_rand.h"
 #include <stdlib.h>
-#include "Timer.h"
+#include "timer.h"
 #include "main.h"
 
 #include "timer_helper.h"
