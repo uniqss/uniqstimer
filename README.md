@@ -1,29 +1,17 @@
 # uniqstimer C++/go/js
 
 ## uniqstimer:
-五个轮 每个轮里面有256个槽 精度1MS
+if needed, change these constants to set the timer wheel and slots:
+* TIMER_BITS_PER_WHEEL: every wheel's bits. the wheel's size is 2^TIMER_BITS_PER_WHEEL
+* TIMER_WHEEL_COUNT: wheel count.
 
-总共256*5=1280个槽 总共是2^40=1,099,511,627,776MS =12,725.829天 =34.865年
+by default, TIMER_BITS_PER_WHEEL is set to 10 and TIMER_WHEEL_COUNT is set to 4.
 
-34年，应该一般的场景够用了。适用于时间精度要求非常高的场景(精度毫秒)，比如帧同步里的BUFF。
-
-## uniqstimerIII:
-五个轮 每个轮里面有64个槽 精度100MS
-
-总共64*5=320个槽 总共是2^30= ‭1,073,741,824‬ 单位：百毫秒 =‭107,374,182.4‬秒 =‭1,242.757天 =3.4年
-3年多，一般的场景够用。适用于时间要求精度不是非常高(100MS以内)的场景。比如各种排行榜结算、比如玩家隔天凌晨4点刷新、比如月卡、比如心跳、比如登录空SESSION超时等等。
-
-TIMER有一个问题：如果频繁删除时间非常非常长的定时器，会导致进程的内存会越来越多。有很多定时器被标记为Killed状态，躺在高级的时间轮里面，要轮到的时候才会清。
-
-如果是在MMO里用，添加TIMER的时候尽量避开非常频繁地删除时间特别长的定时器(持续特别长但中间会触发的不算在此列，这里是指首次触发就特别长/或者触发后再度触发的时间特别长且被触发过)
-
-相同的TimerId不能重复 可以在_helper里面自己定义用池或者是定义分配和释放策略
-
-测试直接开一定数量定时器看执行超过1ms的总数量，每隔0.1秒或者1秒统计一次打印出来。注意如果打印太频繁会影响到性能
+by default, 2^10^4MS = 12,725.8 days = 34.8 years  supported.
 
 ## usage:
 index | language | implemention
 ------ | ------ | ------
 I. | cpp | just copy all files in directory cpp into your project
 II. | go | import "github.com/uniqss/uniqstimer"
-III. | js | just copy js/uniqstimer.js and js/uniqstimerIII.js into your project
+III. | js | just copy all files in directory js into your project

@@ -7,8 +7,9 @@
 #define TimerMsType int64_t
 
 #define TIMER_BITS_PER_WHEEL 10
-#define TIMER_SLOT_COUNT_PER_WHEEL 1 << TIMER_BITS_PER_WHEEL
 #define TIMER_WHEEL_COUNT 4
+
+#define TIMER_SLOT_COUNT_PER_WHEEL 1 << TIMER_BITS_PER_WHEEL
 #define TIMER_MASK ((1 << TIMER_BITS_PER_WHEEL) - 1)
 
 class TimerNode {

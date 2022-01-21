@@ -58,10 +58,6 @@ void TimerNodeAllocator::FreeObj(TimerNode* pTimer) {
 #include <time.h>
 #if defined(WIN32) || defined(_WIN32) || defined(WINDOWS)
 #include <windows.h>
-#else
-#include <sys/time.h>
-#endif
-#if defined(WIN32) || defined(_WIN32) || defined(WINDOWS)
 int gettimeofday(struct timeval* tp, void* tzp) {
     time_t clock;
     struct tm tm;
@@ -79,6 +75,8 @@ int gettimeofday(struct timeval* tp, void* tzp) {
     tp->tv_usec = wtm.wMilliseconds * 1000;
     return (0);
 }
+#else
+#include <sys/time.h>
 #endif
 
 TimerMsType UTimerGetCurrentTimeMS(void) {
