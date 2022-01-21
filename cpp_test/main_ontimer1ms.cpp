@@ -1,8 +1,8 @@
-#include "main.h"
+﻿#include "main.h"
 
 #include "timer_helper.h"
 
-void OnTimerIIIPressureTest(TimerIdType timerId, void* pParam) {
+void OnTimerPressureTest(TimerIdType timerId, void* pParam) {
     // const char* pszStr = (const char*)pParam;
     ++FrameOnTimerCalled;
     ++OnTimerCount;

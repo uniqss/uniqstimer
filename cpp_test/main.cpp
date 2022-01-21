@@ -1,4 +1,4 @@
-#include <stdio.h>
+﻿#include <stdio.h>
 #include "Timer.h"
 #include <iostream>
 #include <vector>
@@ -66,183 +66,6 @@ class TestRandTimerInfo {
 
 std::vector<TestRandTimerInfo> arrTestRandTimerInfos;
 
-void OnTimer(TimerIdType timerId, void* pParam) {
-    const char* pszStr = (const char*)pParam;
-    ++FrameOnTimerCalled;
-    ++OnTimerCount;
-    TimerMsType startUS = UTimerGetCurrentTimeUS();
-    TimerMsType currMS = UTimerGetCurrentTimeMS();
-
-#ifdef UNIQS_LOG_EVERYTHING
-    LOG(INFO) << "OnTimer timerId:" << timerId << " pszStr:" << pszStr << " currMS:" << currMS;
-#endif
-
-#if 0
-	auto ms = currMS % 1000;
-	auto s = currMS / 1000;
-	printf("OnTimer. timerId:%llu s:%llu ms:%llu str: %s\n", timerId, s, ms, pszStr);
-#endif
-    bool bOk = false;
-
-#if 1
-    if (timerId == timerIdMotherMother) {
-        if (timerIdMotherCurr < timerIdMotherStop) {
-            for (size_t i = 0; i < 100; i++) {
-                pMgr->CreateTimer(timerIdMotherCurr, OnTimer, (void*)"mother", 500, 500);
-                timerIdMotherCurr++;
-            }
-        } else {
-            pMgr->KillTimer(timerIdMotherMother);
-        }
-    }
-    static int RunningTimersCount = 100;
-    if (timerId >= timerIdMotherStart && timerId <= timerIdMotherStop) {
-        // kill create rand
-        auto fakeRand = FakeRand();
-        auto randTimerIdIdx = (fakeRand % timerIdRandCount);
-        auto randTimerId = randTimerIdIdx + timerIdRandStart;
-
-        TimerIdType __randKill = FakeRand() % 10000;
-#if 0
-		// 最低20% 最高85%
-		TimerIdType __randKillPercent = 2000 + ((TimerIdType)6500 * RunningTimersCount / timerIdRandCount);
-#else
-        TimerIdType __randKillPercent = 5000;
-#endif
-        timerIdRandCount;
-        auto& rInfo = arrTestRandTimerInfos[randTimerIdIdx];
-        auto& rState = rInfo.state;
-        if (false && RunningTimersCount > 100 && __randKill < __randKillPercent) {
-#ifdef UNIQS_LOG_EVERYTHING
-            LOG(INFO) << "OnTimer rand kill timerId:" << timerId << " rState:" << rState << " randTimerId:" << randTimerId << " currMS:" << currMS;
-#endif
-            // 0默认 1created 2killed
-            if (rState == 1) {
-                bOk = pMgr->KillTimer(randTimerId);
-                if (!bOk) {
-                    OnTimerError("OnTimer KillTimer failed randTimerId:" + std::to_string(randTimerId));
-                    // printf("OnTimer KillTimer failed. timerId:%llu\n", timerId);
-                }
-                // set data
-                RunningTimersCount--;
-                rInfo.Clear();
-                rState = 2;
-                bOk = pMgr->KillTimer(randTimerId);
-                if (bOk) {
-                    OnTimerError("OnTimer KillTimer failed randTimerId:" + std::to_string(randTimerId));
-                }
-            } else if (rState == 2 || rState == 0) {
-#ifdef UNIQS_LOG_EVERYTHING
-                LOG(INFO) << "OnTimer rand kill timerId:" << timerId << " randTimerId:" << randTimerId << " currMS:" << currMS;
-#endif
-                bOk = pMgr->KillTimer(randTimerId);
-                if (bOk) {
-                    OnTimerError("OnTimer KillTimer failed randTimerId:" + std::to_string(randTimerId));
-                }
-                rState = 2;
-            }
-        }
-        TimerIdType randCreate = FakeRand() % 10000;
-        if (RunningTimersCount < timerIdRandCount && randCreate < 8000) {
-            // 性能测试，避免创建大量小于128毫秒的定时器，128-256落到第一个轮的概率还是很大。
-#if 0
-			auto randRepeate = (FakeRand() % 2) > 0;
-			TimerMsType t1 = ((FakeRand() % (131072 + 6)) + 128);
-			TimerMsType t2 = randRepeate ? ((FakeRand() % (131072 + 6)) + 128) : 0;
-#else
-            TimerMsType t1 = 500;
-            TimerMsType t2 = 500;
-            auto randRepeate = true;
-#endif
-
-#ifdef UNIQS_LOG_EVERYTHING
-            LOG(INFO) << "OnTimer rand create timerId:" << timerId << " rState:" << rState << " randTimerId:" << randTimerId << " currMS:" << currMS << " t1:" << t1
-                      << " t2:" << t2;
-#endif
-            // 0默认 1created 2killed
-            if (rState == 1) {
-                bOk = pMgr->CreateTimer(randTimerId, OnTimer, (void*)"", t1, t2);
-                if (bOk) {
-                    OnTimerError("OnTimer CreateTimer should fail but succeeded. randTimerId:" + std::to_string(randTimerId));
-                }
-            } else {
-                bOk = pMgr->CreateTimer(randTimerId, OnTimer, (void*)"", t1, t2);
-                if (!bOk) {
-                    OnTimerError("OnTimer CreateTimer should succeed but failed. randTimerId:" + std::to_string(randTimerId));
-                }
-                // set data
-                RunningTimersCount++;
-                rState = 1;
-                rInfo.triggeredCount = 0;
-                rInfo.isRepeate = randRepeate;
-                rInfo.createTime = currMS;
-                rInfo.dueTime = t1;
-                rInfo.period = t2;
-                bOk = pMgr->CreateTimer(randTimerId, OnTimer, (void*)"", t1, t2);
-                if (bOk) {
-                    OnTimerError("OnTimer KillTimer failed randTimerId:" + std::to_string(randTimerId));
-                }
-            }
-        }
-    }
-
-#if 1
-    static TimerMsType lastTimeMS = UTimerGetCurrentTimeMS();
-    TimerMsType diff = currMS - lastTimeMS;
-    static TimerMsType OnTimerTriggered = 0;
-    ++OnTimerTriggered;
-    if (diff > 1000) {
-        extern int UniqsTimerAllocCalled;
-        extern int UniqsTimerFreeCalled;
-        extern int UniqsTimerFreeCount;
-        RunAverageUS = RunTotalUS / RunCount;
-        OnTimerAverageUS = OnTimerTotalUS / OnTimerCount;
-        auto percent = (OnTimerTotalUS)*100 / RunTotalUS;
-        auto av = OnTimerCount / RunCount;
-
-#if 1
-		printf("Timers:%d FOT:%llu OnTimerTriggered:%llu Alloced:%d Freeed:%d FreeM:%d Over1MS:%d RunAvUS:%llu OnTimer:%llu|%llu|%llu|%llu\n"
-			, RunningTimersCount, FrameOnTimerCalled, OnTimerTriggered, UniqsTimerAllocCalled, UniqsTimerFreeCalled, UniqsTimerFreeCount, RunExceed1MSCount, RunAverageUS
-			, OnTimerTotalUS, OnTimerCount, OnTimerAverageUS, percent);
-#endif
-#if 0
-		printf("Timers:%d Run:%llu|%llu|%llu OnTimer:%llu|%llu|%llu OnTimer/Run:%llu\%% OnTimerCount/RunCount:%llu\n",
-			RunningTimersCount, RunTotalUS, RunCount, RunAverageUS, OnTimerTotalUS, OnTimerCount, OnTimerAverageUS, percent, av);
-#endif
-
-        lastTimeMS = currMS;
-    }
-#endif
-#endif
-#if 1
-    if (timerId >= timerIdRandStart) {
-        TimerMsType timerIdIdx = timerId - timerIdRandStart;
-        auto& rInfo = arrTestRandTimerInfos[timerIdIdx];
-        TimerMsType shouldTimeMS = rInfo.createTime;
-        if (rInfo.dueTime == 0) {
-            ++rInfo.triggeredCountRepeate;
-        } else if (rInfo.isRepeate && rInfo.triggeredCount > 0) {
-            ++rInfo.triggeredCountRepeate;
-        } else {
-            ++rInfo.triggeredCount;
-        }
-
-        shouldTimeMS += rInfo.dueTime * rInfo.triggeredCount + rInfo.period * rInfo.triggeredCountRepeate;
-
-        TimerMsType __diff = shouldTimeMS > currMS ? shouldTimeMS - currMS : currMS - shouldTimeMS;
-        if (__diff > 1000) {
-            OnTimerError("timer time check error");
-        }
-
-        if (!rInfo.isRepeate) {
-            rInfo.state = 0;
-        }
-    }
-#endif
-    TimerMsType endUS = UTimerGetCurrentTimeUS();
-    OnTimerTotalUS += endUS - startUS;
-}
-
 TimerMsType UTimerGetCurrentTimeUS(void) {
 #if 1
     struct timespec ts;
@@ -270,7 +93,11 @@ int main(int argc, const char** argv) {
     pMgr = std::unique_ptr<TimerManager>(new TimerManager());
     pMgrIII = std::unique_ptr<TimerManagerIII>(new TimerManagerIII());
 
+#if 1
     std::thread t(LogicThread);
+#else
+    std::thread t(LogicThreadIII);
+#endif
     t.detach();
 
     std::string input = "";
@@ -282,9 +109,8 @@ int main(int argc, const char** argv) {
         }
         if (input == "p" || input == "print") {
 #if 1
-            printf("FrameOnTimerCalled:%llu RunExceed1MSCount:%d RunAverageUS:%llu OnTimerTotalUS:%llu OnTimerCount:%llu\n",
-                   FrameOnTimerCalled, RunExceed1MSCount, RunAverageUS, OnTimerTotalUS,
-                   OnTimerCount);
+            printf("FrameOnTimerCalled:%llu RunExceed1MSCount:%d RunAverageUS:%llu OnTimerTotalUS:%llu OnTimerCount:%llu\n", FrameOnTimerCalled, RunExceed1MSCount,
+                   RunAverageUS, OnTimerTotalUS, OnTimerCount);
 #endif
             continue;
         }

@@ -50,7 +50,7 @@
     <ClCompile Include="fake_rand.cpp">
       <Filter>Header Files</Filter>
     </ClCompile>
-    <ClCompile Include="main_logicthread.cpp">
+    <ClCompile Include="main_logicthreadIII.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="mersenne_rand.cpp">
@@ -68,5 +68,14 @@
     <ClCompile Include="..\cpp\timerIII.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="main_ontimer1ms.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="main_logicthread.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\README.md" />
   </ItemGroup>
 </Project>

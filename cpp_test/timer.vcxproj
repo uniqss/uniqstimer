@@ -222,8 +222,13 @@
     <ClCompile Include="glog_helper.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="main_logicthread.cpp" />
+    <ClCompile Include="main_logicthreadIII.cpp" />
     <ClCompile Include="main_ontimer100ms.cpp" />
+    <ClCompile Include="main_ontimer1ms.cpp" />
     <ClCompile Include="mersenne_rand.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\README.md" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

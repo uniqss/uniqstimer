@@ -28,9 +28,8 @@ extern TimerMsType OnTimerCount;
 extern TimerMsType OnTimerAverageUS;
 extern uint64_t FrameOnTimerCalled;
 
-
-void OnTimer(TimerIdType timerId, void* pParam);
-void OnTimerIII(TimerIdType timerId, void* pParam);
 void OnTimerIIIPressureTest(TimerIdType timerId, void* pParam);
+void OnTimerPressureTest(TimerIdType timerId, void* pParam);
 void LogicThread();
+void LogicThreadIII();
 TimerMsType UTimerGetCurrentTimeUS(void);
