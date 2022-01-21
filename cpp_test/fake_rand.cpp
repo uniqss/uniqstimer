@@ -1,3 +1,4 @@
+#include <cstddef>
 #include "fake_rand.h"
 #include <stdlib.h>
 

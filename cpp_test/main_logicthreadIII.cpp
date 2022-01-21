@@ -1,3 +1,5 @@
+#include <cstddef>
+
 #include "fake_rand.h"
 #include <stdlib.h>
 #include "timer.h"
@@ -6,6 +8,7 @@
 #include "timer_helper.h"
 
 #include <thread>
+#include <cstdio>
 
 void LogicThreadIII() {
     srand((unsigned)UTimerGetCurrentTimeMS());

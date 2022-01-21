@@ -2,6 +2,7 @@
 
 #include "timer.h"
 #include "timerIII.h"
+#include <string>
 
 TimerNode* AllocObj();
 void FreeObj(TimerNode* pTimer);
