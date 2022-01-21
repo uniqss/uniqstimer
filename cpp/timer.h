@@ -14,13 +14,13 @@
 
 class TimerNode {
    public:
-    TimerNode* pNext;
-    TimerIdType qwTimerId;
-    TimerMsType qwExpires;  //
-    TimerMsType qwPeriod;
+    TimerNode* pNext_;
+    TimerIdType qwTimerId_;
+    TimerMsType qwExpires_;  //
+    TimerMsType qwPeriod_;
     void (*timerFn)(TimerIdType, void*);
-    void* pParam;
-    bool bRunning;
+    void* pParam_;
+    bool bRunning_;
 };
 
 #include "timer_helper.h"
@@ -33,7 +33,7 @@ class TimerManager {
         TimerMsType wheelIdx = 0;
         TimerMsType slotIdx = 0;
 
-        TimerMsType qwExpires = pTimer->qwExpires;
+        TimerMsType qwExpires = pTimer->qwExpires_;
         TimerMsType qwDueTime = qwExpires - this->qwCurrentTimeMS_;
 
         if (qwDueTime < TimerMsType(1) << (TIMER_BITS_PER_WHEEL * (TIMER_WHEEL_COUNT))) {
@@ -55,10 +55,10 @@ class TimerManager {
         if (arrListTimerTail_[wheelIdx][slotIdx] == nullptr) {
             arrListTimerHead_[wheelIdx][slotIdx] = pTimer;
             arrListTimerTail_[wheelIdx][slotIdx] = pTimer;
-            pTimer->pNext = nullptr;
+            pTimer->pNext_ = nullptr;
         } else {
-            arrListTimerTail_[wheelIdx][slotIdx]->pNext = pTimer;
-            pTimer->pNext = nullptr;
+            arrListTimerTail_[wheelIdx][slotIdx]->pNext_ = pTimer;
+            pTimer->pNext_ = nullptr;
             arrListTimerTail_[wheelIdx][slotIdx] = pTimer;
         }
     }
@@ -67,9 +67,9 @@ class TimerManager {
         TimerNode* pTimer = arrListTimerHead_[wheelIdx][slotIdx];
         TimerNode* pNext = nullptr;
         for (; pTimer != nullptr; pTimer = pNext) {
-            pNext = pTimer->pNext;
+            pNext = pTimer->pNext_;
 
-            if (pTimer->bRunning) {
+            if (pTimer->bRunning_) {
                 AddTimer(pTimer);
             } else {
                 allocator_.FreeObj(pTimer);
@@ -97,7 +97,7 @@ class TimerManager {
             for (auto slotIdx = 0; slotIdx < TIMER_SLOT_COUNT_PER_WHEEL; ++slotIdx) {
                 pTimer = this->arrListTimerHead_[wheelIdx][slotIdx];
                 for (; pTimer != nullptr; pTimer = pNext) {
-                    pNext = pTimer->pNext;
+                    pNext = pTimer->pNext_;
 
                     allocator_.FreeObj(pTimer);
                 }
@@ -133,14 +133,14 @@ class TimerManager {
         qwDueTime /= qwTickOneSlotMS_;
         qwPeriod /= qwTickOneSlotMS_;
 
-        pTimer->qwPeriod = qwPeriod;
+        pTimer->qwPeriod_ = qwPeriod;
         pTimer->timerFn = timerFn;
-        pTimer->pParam = pParam;
-        pTimer->qwTimerId = timerId;
+        pTimer->pParam_ = pParam;
+        pTimer->qwTimerId_ = timerId;
 
-        pTimer->bRunning = true;
+        pTimer->bRunning_ = true;
 
-        pTimer->qwExpires = this->qwCurrentTimeMS_ + qwDueTime;
+        pTimer->qwExpires_ = this->qwCurrentTimeMS_ + qwDueTime;
         AddTimer(pTimer);
         this->mapTimers_[timerId] = pTimer;
 
@@ -154,11 +154,11 @@ class TimerManager {
         }
 
         TimerNode* pTimer = it->second;
-        if (!pTimer->bRunning) {
+        if (!pTimer->bRunning_) {
             return false;
         }
 
-        pTimer->bRunning = false;
+        pTimer->bRunning_ = false;
         this->mapTimers_.erase(it);
 
         return true;
@@ -166,7 +166,7 @@ class TimerManager {
 
     void KillAllTimers() {
         for (auto it = this->mapTimers_.begin(); it != this->mapTimers_.end(); ++it) {
-            it->second->bRunning = false;
+            it->second->bRunning_ = false;
         }
         this->mapTimers_.clear();
     }
@@ -197,13 +197,13 @@ class TimerManager {
 
             pTimer = this->arrListTimerHead_[0][idxExecutingSlotIdx];
             for (; pTimer != nullptr; pTimer = pNext) {
-                pNext = pTimer->pNext;
+                pNext = pTimer->pNext_;
 
-                timerId = pTimer->qwTimerId;
-                if (pTimer->bRunning) {
-                    pTimer->timerFn(pTimer->qwTimerId, pTimer->pParam);
-                    if (pTimer->qwPeriod != 0) {
-                        pTimer->qwExpires = this->qwCurrentTimeMS_ + pTimer->qwPeriod;
+                timerId = pTimer->qwTimerId_;
+                if (pTimer->bRunning_) {
+                    pTimer->timerFn(pTimer->qwTimerId_, pTimer->pParam_);
+                    if (pTimer->qwPeriod_ != 0) {
+                        pTimer->qwExpires_ = this->qwCurrentTimeMS_ + pTimer->qwPeriod_;
                         AddTimer(pTimer);
                     } else {
                         allocator_.FreeObj(pTimer);

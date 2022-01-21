@@ -11,7 +11,7 @@ TimerNodeAllocator::~TimerNodeAllocator() {
     TimerNode* tmp = nullptr;
     while (pFreeTimerHeadMem_ != nullptr) {
         tmp = pFreeTimerHeadMem_;
-        pFreeTimerHeadMem_ = pFreeTimerHeadMem_->pNext;
+        pFreeTimerHeadMem_ = pFreeTimerHeadMem_->pNext_;
         delete (tmp);
     }
 }
@@ -22,8 +22,8 @@ TimerNode* TimerNodeAllocator::AllocObj() {
     if (pFreeTimerHeadMem_ != nullptr) {
         TimerFreeCount_--;
         TimerNode* pTimer = pFreeTimerHeadMem_;
-        pFreeTimerHeadMem_ = pTimer->pNext;
-        pTimer->pNext = nullptr;
+        pFreeTimerHeadMem_ = pTimer->pNext_;
+        pTimer->pNext_ = nullptr;
         return pTimer;
     }
     auto ret = new TimerNode();
@@ -35,16 +35,16 @@ void TimerNodeAllocator::FreeObj(TimerNode* pTimer) {
     ++TimerFreeCount_;
     if (pFreeTimerHeadMem_ == nullptr) {
         pFreeTimerHeadMem_ = pTimer;
-        pFreeTimerHeadMem_->pNext = nullptr;
+        pFreeTimerHeadMem_->pNext_ = nullptr;
     } else {
-        pTimer->pNext = pFreeTimerHeadMem_;
+        pTimer->pNext_ = pFreeTimerHeadMem_;
         pFreeTimerHeadMem_ = pTimer;
     }
 
     if (TimerFreeCount_ > UNIQS_TIMER_CACHE_MAX) {
         TimerNode* pDelete = pFreeTimerHeadMem_;
         for (int i = 0; i < UNIQS_TIMER_CACHE_DELETE; ++i) {
-            pFreeTimerHeadMem_ = pDelete->pNext;
+            pFreeTimerHeadMem_ = pDelete->pNext_;
 
             // free memory
             delete pDelete;
@@ -94,9 +94,16 @@ int64_t UTimerGetCurrentTimeUS(void) {
     auto duration_in_ms = std::chrono::duration_cast<std::chrono::microseconds>(time_now.time_since_epoch());
     return (TimerMsType)duration_in_ms.count();
 #else
+#if 1
     struct timeval tv;
     gettimeofday(&tv, NULL);
     return tv.tv_sec * 1000000 + tv.tv_usec;
+#endif
+#if 0
+    auto time_now = std::chrono::system_clock::now();
+    auto duration_in_ms = std::chrono::duration_cast<std::chrono::microseconds>(time_now.time_since_epoch());
+    return (TimerMsType)duration_in_ms.count();
+#endif
 #endif
 }
 
