@@ -9,17 +9,18 @@
 
 #include <thread>
 #include <cstdio>
+#include <unistd.h>
 
 void LogicThread() {
     srand((unsigned)UTimerGetCurrentTimeMS());
     FakeRandInit();
 
-    for (TimerIdType i = 1; i <= 100000; ++i) {
+    for (TimerIdType i = 1; i <= 1000000; ++i) {
         pMgr->CreateTimer(i, OnTimerPressureTest, (void*)"timer LV I timer test pressure test", (i % 1000) + 1, 1000);
     }
 
-    int64_t lastMS = UTimerGetCurrentTimeMS();
-    int64_t currMS = 0;
+    int64_t lastUS = UTimerGetCurrentTimeUS();
+    int64_t currUS = 0;
 
     int64_t tmpDiffSum = 0;
     int lessCount = 0;
@@ -27,45 +28,41 @@ void LogicThread() {
     while (bWorking) {
         FrameOnTimerCalled = 0;
 
-        currMS = UTimerGetCurrentTimeMS();
-        while (currMS > lastMS) {
-            int64_t tmpUSStart = UTimerGetCurrentTimeUS();
-
+        currUS = UTimerGetCurrentTimeUS();
+        if (currUS > lastUS) {
             pMgr->Run();
             ++RunCount;
-            ++lastMS;
+            lastUS += 1000;
 
             int64_t tmpUSEnd = UTimerGetCurrentTimeUS();
-            int64_t tmpUSDiff = (tmpUSEnd - tmpUSStart) / 1000000;
-#define PRINT_IMMEDIATELY 0
-            if (tmpUSDiff > 0) {
-#if PRINT_IMMEDIATELY
-                printf("%llu ", tmpUSDiff);
-                fflush(stdout);
-#endif
-
+            RunTotalUS += tmpUSEnd - currUS;
+            if (tmpUSEnd > currUS + 1000) {
                 ++RunExceed1MSCount;
                 ++exceedCount;
-                tmpDiffSum += tmpUSDiff;
+                tmpDiffSum += tmpUSEnd - currUS;
             } else {
-#if PRINT_IMMEDIATELY
-                printf(".");
-                fflush(stdout);
-#endif
-
                 ++lessCount;
             }
             if (lessCount + exceedCount >= 1000) {
-                printf("%d|%lld ", exceedCount, tmpDiffSum);
+                printf("%d|%lld|%lld ", exceedCount, tmpDiffSum, RunTotalUS/RunCount);
                 fflush(stdout);
 
                 lessCount = 0;
                 exceedCount = 0;
                 tmpDiffSum = 0;
             }
-        }
-
+#if 0
         std::this_thread::sleep_for(std::chrono::microseconds(10));
+#else
+            usleep(10);
+#endif
+        } else {
+#if 0
+        std::this_thread::sleep_for(std::chrono::microseconds(10));
+#else
+            usleep(20);
+#endif
+        }
     }
     bTerminateOk = true;
 }

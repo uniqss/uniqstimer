@@ -7,9 +7,9 @@
 
 #define TimerMsType int64_t
 
-#define TIMER_BITS_PER_WHEEL 8
+#define TIMER_BITS_PER_WHEEL 10
 #define TIMER_SLOT_COUNT_PER_WHEEL 1 << TIMER_BITS_PER_WHEEL
-#define TIMER_WHEEL_COUNT 5
+#define TIMER_WHEEL_COUNT 4
 #define TIMER_MASK ((1 << TIMER_BITS_PER_WHEEL) - 1)
 
 class TimerNode {
@@ -34,10 +34,10 @@ class TimerManager {
     void KillAllTimers();
 
    public:
-    TimerMsType qwCurrentTimeMS;  // current time ms
-    std::unordered_map<TimerIdType, TimerNode*> pTimers;
-    TimerNode* arrListTimerHead[TIMER_WHEEL_COUNT][TIMER_SLOT_COUNT_PER_WHEEL];
-    TimerNode* arrListTimerTail[TIMER_WHEEL_COUNT][TIMER_SLOT_COUNT_PER_WHEEL];
+    TimerMsType qwCurrentTimeMS_;  // current time ms
+    std::unordered_map<TimerIdType, TimerNode*> mapTimers_;
+    TimerNode* arrListTimerHead_[TIMER_WHEEL_COUNT][TIMER_SLOT_COUNT_PER_WHEEL];
+    TimerNode* arrListTimerTail_[TIMER_WHEEL_COUNT][TIMER_SLOT_COUNT_PER_WHEEL];
 
    public:
     void Run();

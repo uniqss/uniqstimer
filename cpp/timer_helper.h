@@ -11,4 +11,5 @@ TimerNodeIII* AllocObjIII();
 void FreeObjIII(TimerNodeIII* pTimer);
 
 int64_t UTimerGetCurrentTimeMS(void);
+int64_t UTimerGetCurrentTimeUS(void);
 void OnTimerError(const std::string& err);

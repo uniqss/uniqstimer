@@ -7,11 +7,10 @@
 
 #define TimerMsTypeIII int64_t
 
-#define TIMER_BITS_PER_WHEELIII 6
+#define TIMER_BITS_PER_WHEELIII 10
 #define TIMER_SLOT_COUNT_PER_WHEELIII 1 << TIMER_BITS_PER_WHEELIII
-#define TIMER_WHEEL_COUNTIII 5
+#define TIMER_WHEEL_COUNTIII 4
 #define TIMER_MASKIII ((1 << TIMER_BITS_PER_WHEELIII) - 1)
-#define TIMER_MS_COUNTIII 100
 
 class TimerNodeIII {
    public:
@@ -26,7 +25,7 @@ class TimerNodeIII {
 
 class TimerManagerIII {
    public:
-    TimerManagerIII();
+    TimerManagerIII(TimerMsTypeIII TIMER_MS_COUNTIII = 100);
     ~TimerManagerIII();
 
     // qwDueTime: first timeout   qwPeriod: then periodic timeout.(0: one shot timer)
@@ -35,10 +34,11 @@ class TimerManagerIII {
     void KillAllTimers();
 
    public:
-    TimerMsTypeIII qwCurrentTimeMS;  // current time ms / 100
-    std::unordered_map<TimerIdType, TimerNodeIII*> pTimers;
-    TimerNodeIII* arrListTimerHead[TIMER_WHEEL_COUNTIII][TIMER_SLOT_COUNT_PER_WHEELIII];
-    TimerNodeIII* arrListTimerTail[TIMER_WHEEL_COUNTIII][TIMER_SLOT_COUNT_PER_WHEELIII];
+    TimerMsTypeIII qwCurrentTimeMS_;  // current time ms / 100
+    const TimerMsTypeIII qwTickWheelMS_;
+    std::unordered_map<TimerIdType, TimerNodeIII*> mapTimers_;
+    TimerNodeIII* arrListTimerHead_[TIMER_WHEEL_COUNTIII][TIMER_SLOT_COUNT_PER_WHEELIII];
+    TimerNodeIII* arrListTimerTail_[TIMER_WHEEL_COUNTIII][TIMER_SLOT_COUNT_PER_WHEELIII];
 
    public:
     void Run();

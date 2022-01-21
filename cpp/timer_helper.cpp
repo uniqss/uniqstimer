@@ -2,7 +2,6 @@
 
 #include <time.h>
 #include <stdexcept>
-#include <chrono>
 
 int UniqsTimerAllocCalled = 0;
 int UniqsTimerFreeCalled = 0;
@@ -91,25 +90,56 @@ void FreeObjIII(TimerNodeIII* pTimer) {
         UniqsTimerFreeCountIII -= UNIQS_TIMER_CACHE_DELETEIII;
     }
 }
-
-TimerMsType UTimerGetCurrentTimeMS(void) {
-#if 0
-    return clock();
+#include <time.h>
+#if defined(WIN32) || defined(_WIN32) || defined(WINDOWS)
+#include <windows.h>
+#else
+#include <sys/time.h>
+#endif
+#if defined(WIN32) || defined(_WIN32) || defined(WINDOWS)
+int gettimeofday(struct timeval* tp, void* tzp) {
+    time_t clock;
+    struct tm tm;
+    SYSTEMTIME wtm;
+    GetLocalTime(&wtm);
+    tm.tm_year = wtm.wYear - 1900;
+    tm.tm_mon = wtm.wMonth - 1;
+    tm.tm_mday = wtm.wDay;
+    tm.tm_hour = wtm.wHour;
+    tm.tm_min = wtm.wMinute;
+    tm.tm_sec = wtm.wSecond;
+    tm.tm_isdst = -1;
+    clock = mktime(&tm);
+    tp->tv_sec = clock;
+    tp->tv_usec = wtm.wMilliseconds * 1000;
+    return (0);
+}
 #endif
 
+TimerMsType UTimerGetCurrentTimeMS(void) {
+#if 1
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    return tv.tv_sec * 1000 + tv.tv_usec / 1000;
+#endif
 #if 0
-    struct timespec ts;
-    timespec_get(&ts, TIME_UTC);
-    // char buff[100];
-    // strftime(buff, sizeof buff, "%D %T", gmtime(&ts.tv_sec));
-    // printf("Current time: %s.%09ld UTC\n", buff, ts.tv_nsec);
-    TimerMsType ret = (TimerMsType)ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
-    return ret;
-#else
+    unsigned int lo, hi;
+
+    // RDTSC copies contents of 64-bit TSC into EDX:EAX
+    asm volatile("rdtsc" : "=a"(lo), "=d"(hi));
+    return (unsigned long long)hi << 32 | lo;
+#endif
+#if 0
     auto time_now = std::chrono::system_clock::now();
     auto duration_in_ms = std::chrono::duration_cast<std::chrono::milliseconds>(time_now.time_since_epoch());
     return (TimerMsType)duration_in_ms.count();
 #endif
+}
+
+int64_t UTimerGetCurrentTimeUS(void) {
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    return tv.tv_sec * 1000000 + tv.tv_usec;
 }
 
 #include <iostream>

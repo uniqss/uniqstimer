@@ -58,23 +58,9 @@ class TestRandTimerInfo {
 
 std::vector<TestRandTimerInfo> arrTestRandTimerInfos;
 
-TimerMsType UTimerGetCurrentTimeUS(void) {
-#if 1
-    struct timespec ts;
-    timespec_get(&ts, TIME_UTC);
-    // char buff[100];
-    // strftime(buff, sizeof buff, "%D %T", gmtime(&ts.tv_sec));
-    // printf("Current time: %s.%09ld UTC\n", buff, ts.tv_nsec);
-    TimerMsType ret = (TimerMsType)ts.tv_sec * 1000000000 + ts.tv_nsec;
-    return ret;
-#else
-    auto time_now = std::chrono::system_clock::now();
-    auto duration_in_us = std::chrono::duration_cast<std::chrono::nanoseconds>(time_now.time_since_epoch());
-    return (TimerMsType)duration_in_us.count();
-#endif
-}
-
+#include <gperftools/profiler.h>
 int main(int argc, const char** argv) {
+    ProfilerStart("uniqstimer.prof");
     arrTestRandTimerInfos.resize(timerIdRandCount);
     auto currMS = UTimerGetCurrentTimeMS();
     auto ms = currMS % 1000;
@@ -102,8 +88,8 @@ int main(int argc, const char** argv) {
         if (input == "p" || input == "print") {
 #if 1
             auto currPrintMS = UTimerGetCurrentTimeMS();
-            printf("FrameOnTimerCalled:%llu RunExceed1MSCount:%d OnTimerCount:%llu OnTimerCountSinceLastPrint:%llu OnTimer/ms:%llu\n",
-                   FrameOnTimerCalled, RunExceed1MSCount, OnTimerCount, OnTimerCount - OnTimerCountSinceLastPrint, (OnTimerCount - OnTimerCountSinceLastPrint)/(currPrintMS - lastPrintMS));
+            printf("FrameOnTimerCalled:%llu RunExceed1MSCount:%d OnTimerCount:%llu OnTimerCountSinceLastPrint:%llu OnTimer/ms:%llu\n", FrameOnTimerCalled, RunExceed1MSCount,
+                   OnTimerCount, OnTimerCount - OnTimerCountSinceLastPrint, (OnTimerCount - OnTimerCountSinceLastPrint) / (currPrintMS - lastPrintMS));
             OnTimerCountSinceLastPrint = OnTimerCount;
             lastPrintMS = currPrintMS;
 #endif
@@ -114,6 +100,9 @@ int main(int argc, const char** argv) {
     while (!bTerminateOk) {
         std::this_thread::sleep_for(std::chrono::microseconds(500));
     }
+
+
+    ProfilerStop();
 
     return 0;
 }
