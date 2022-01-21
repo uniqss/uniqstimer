@@ -26,7 +26,6 @@ void LogicThread() {
     int exceedCount = 0;
     while (bWorking) {
         FrameOnTimerCalled = 0;
-        // pMgr->Run();
 
         currMS = UTimerGetCurrentTimeMS();
         while (currMS > lastMS) {
@@ -38,17 +37,28 @@ void LogicThread() {
 
             int64_t tmpUSEnd = UTimerGetCurrentTimeUS();
             int64_t tmpUSDiff = (tmpUSEnd - tmpUSStart) / 1000000;
+#define PRINT_IMMEDIATELY 0
             if (tmpUSDiff > 0) {
-                // printf("%llu\n", tmpUSDiff);
+#if PRINT_IMMEDIATELY
+                printf("%llu ", tmpUSDiff);
+                fflush(stdout);
+#endif
+
                 ++RunExceed1MSCount;
                 ++exceedCount;
                 tmpDiffSum += tmpUSDiff;
             } else {
-                // printf(".");
+#if PRINT_IMMEDIATELY
+                printf(".");
+                fflush(stdout);
+#endif
+
                 ++lessCount;
             }
             if (lessCount + exceedCount >= 1000) {
                 printf("%d|%lld ", exceedCount, tmpDiffSum);
+                fflush(stdout);
+
                 lessCount = 0;
                 exceedCount = 0;
                 tmpDiffSum = 0;

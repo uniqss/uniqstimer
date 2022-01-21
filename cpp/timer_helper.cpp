@@ -2,6 +2,7 @@
 
 #include <time.h>
 #include <stdexcept>
+#include <chrono>
 
 int UniqsTimerAllocCalled = 0;
 int UniqsTimerFreeCalled = 0;
@@ -92,14 +93,30 @@ void FreeObjIII(TimerNodeIII* pTimer) {
 }
 
 TimerMsType UTimerGetCurrentTimeMS(void) {
+#if 0
     return clock();
+#endif
+
+#if 0
+    struct timespec ts;
+    timespec_get(&ts, TIME_UTC);
+    // char buff[100];
+    // strftime(buff, sizeof buff, "%D %T", gmtime(&ts.tv_sec));
+    // printf("Current time: %s.%09ld UTC\n", buff, ts.tv_nsec);
+    TimerMsType ret = (TimerMsType)ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
+    return ret;
+#else
+    auto time_now = std::chrono::system_clock::now();
+    auto duration_in_ms = std::chrono::duration_cast<std::chrono::milliseconds>(time_now.time_since_epoch());
+    return (TimerMsType)duration_in_ms.count();
+#endif
 }
 
 #include <iostream>
 void OnTimerError(const std::string& err) {
-    #if 0
+#if 0
     throw std::logic_error("OnTimerError" + err);
-    #else
+#else
     std::cout << err << std::endl;
-    #endif
+#endif
 }
