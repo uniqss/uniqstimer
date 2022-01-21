@@ -8,20 +8,10 @@
 
 #include "fake_rand.h"
 
-#include "glog_helper.h"
 #include "main.h"
 
 #include "timer_helper.h"
 
-
-#if defined(WIN32) || defined(WINDOWS) || defined(_WIN32)
-#ifdef _DEBUG
-#pragma comment(lib, "glogd.lib")
-#else
-#pragma comment(lib, "glog.lib")
-#endif
-#else
-#endif
 
 TimerIdType timerIdMotherCurr = timerIdMotherStart;
 
@@ -83,7 +73,6 @@ TimerMsType UTimerGetCurrentTimeUS(void) {
 }
 
 int main(int argc, const char** argv) {
-    init_glog(argv[0], "./logs");
     arrTestRandTimerInfos.resize(timerIdRandCount);
     auto currMS = UTimerGetCurrentTimeMS();
     auto ms = currMS % 1000;
@@ -120,6 +109,5 @@ int main(int argc, const char** argv) {
         std::this_thread::sleep_for(std::chrono::microseconds(500));
     }
 
-    google::ShutdownGoogleLogging();
     return 0;
 }

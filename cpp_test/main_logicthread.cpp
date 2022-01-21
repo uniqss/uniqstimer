@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include "Timer.h"
 #include "main.h"
-#include "glog_helper.h"
 
 #include "timer_helper.h"
 
