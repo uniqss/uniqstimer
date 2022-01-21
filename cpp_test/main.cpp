@@ -26,6 +26,7 @@ TimerMsType RunCount = 0;
 TimerMsType RunAverageUS = 0;
 TimerMsType OnTimerTotalUS = 0;
 TimerMsType OnTimerCount = 0;
+TimerMsType OnTimerCountSinceLastPrint = 0;
 TimerMsType OnTimerAverageUS = 0;
 uint64_t FrameOnTimerCalled = 0;
 
@@ -91,6 +92,7 @@ int main(int argc, const char** argv) {
     t.detach();
 
     std::string input = "";
+    auto lastPrintMS = UTimerGetCurrentTimeMS();
     while (true) {
         std::cin >> input;
         if (input == "exit" || input == "e") {
@@ -99,8 +101,11 @@ int main(int argc, const char** argv) {
         }
         if (input == "p" || input == "print") {
 #if 1
-            printf("FrameOnTimerCalled:%llu RunExceed1MSCount:%d RunAverageUS:%llu OnTimerTotalUS:%llu OnTimerCount:%llu\n", FrameOnTimerCalled, RunExceed1MSCount,
-                   RunAverageUS, OnTimerTotalUS, OnTimerCount);
+            auto currPrintMS = UTimerGetCurrentTimeMS();
+            printf("FrameOnTimerCalled:%llu RunExceed1MSCount:%d OnTimerCount:%llu OnTimerCountSinceLastPrint:%llu OnTimer/ms:%llu\n",
+                   FrameOnTimerCalled, RunExceed1MSCount, OnTimerCount, OnTimerCount - OnTimerCountSinceLastPrint, (OnTimerCount - OnTimerCountSinceLastPrint)/(currPrintMS - lastPrintMS));
+            OnTimerCountSinceLastPrint = OnTimerCount;
+            lastPrintMS = currPrintMS;
 #endif
             continue;
         }

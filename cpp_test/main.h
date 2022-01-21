@@ -25,6 +25,7 @@ extern TimerMsType RunCount;
 extern TimerMsType RunAverageUS;
 extern TimerMsType OnTimerTotalUS;
 extern TimerMsType OnTimerCount;
+extern TimerMsType OnTimerCountSinceLastPrint;
 extern TimerMsType OnTimerAverageUS;
 extern uint64_t FrameOnTimerCalled;
 
