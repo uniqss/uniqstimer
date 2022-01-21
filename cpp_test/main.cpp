@@ -13,11 +13,8 @@
 
 #include "timer_helper.h"
 
-
-TimerIdType timerIdMotherCurr = timerIdMotherStart;
-
 std::unique_ptr<TimerManager> pMgr;
-std::unique_ptr<TimerManagerIII> pMgrIII;
+std::unique_ptr<TimerManager> pMgrIII;
 bool bWorking = true;
 bool bTerminateOk = false;
 int RunExceed1MSCount = 0;
@@ -68,7 +65,7 @@ int main(int argc, const char** argv) {
     printf("main start. s:%llu ms:%llu \n", s, ms);
 
     pMgr = std::unique_ptr<TimerManager>(new TimerManager());
-    pMgrIII = std::unique_ptr<TimerManagerIII>(new TimerManagerIII());
+    pMgrIII = std::unique_ptr<TimerManager>(new TimerManager(100));
 
 #if 1
     std::thread t(LogicThread);

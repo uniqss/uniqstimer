@@ -11,11 +11,6 @@ int UniqsTimerFreeCount = 0;
 const int UNIQS_TIMER_CACHE_MAX = 4096;
 const int UNIQS_TIMER_CACHE_DELETE = UNIQS_TIMER_CACHE_MAX / 2;
 
-TimerNodeIII* __pFreeTimerHeadMemIII;
-int UniqsTimerFreeCountIII = 0;
-const int UNIQS_TIMER_CACHE_MAXIII = 4096;
-const int UNIQS_TIMER_CACHE_DELETEIII = UNIQS_TIMER_CACHE_MAXIII / 2;
-
 TimerNode* AllocObj() {
     ++UniqsTimerAllocCalled;
 
@@ -55,41 +50,6 @@ void FreeObj(TimerNode* pTimer) {
     }
 }
 
-TimerNodeIII* AllocObjIII() {
-    if (__pFreeTimerHeadMemIII != nullptr) {
-        UniqsTimerFreeCountIII--;
-        TimerNodeIII* pTimer = __pFreeTimerHeadMemIII;
-        __pFreeTimerHeadMemIII = pTimer->pNext;
-        pTimer->pNext = nullptr;
-        return pTimer;
-    }
-    auto ret = new TimerNodeIII();
-    return ret;
-}
-void FreeObjIII(TimerNodeIII* pTimer) {
-    ++UniqsTimerFreeCountIII;
-    if (__pFreeTimerHeadMemIII == nullptr) {
-        __pFreeTimerHeadMemIII = pTimer;
-        __pFreeTimerHeadMemIII->pNext = nullptr;
-    } else {
-        pTimer->pNext = __pFreeTimerHeadMemIII;
-        __pFreeTimerHeadMemIII = pTimer;
-    }
-
-
-    if (UniqsTimerFreeCountIII > UNIQS_TIMER_CACHE_MAXIII) {
-        TimerNodeIII* pDelete = __pFreeTimerHeadMemIII;
-        for (int i = 0; i < UNIQS_TIMER_CACHE_DELETEIII; ++i) {
-            __pFreeTimerHeadMemIII = pDelete->pNext;
-
-            // free memory
-            delete pDelete;
-
-            pDelete = __pFreeTimerHeadMemIII;
-        }
-        UniqsTimerFreeCountIII -= UNIQS_TIMER_CACHE_DELETEIII;
-    }
-}
 #include <time.h>
 #if defined(WIN32) || defined(_WIN32) || defined(WINDOWS)
 #include <windows.h>

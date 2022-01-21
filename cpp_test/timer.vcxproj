@@ -206,7 +206,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="..\cpp\timer.h" />
-    <ClInclude Include="..\cpp\timerIII.h" />
     <ClInclude Include="..\cpp\timer_def.h" />
     <ClInclude Include="..\cpp\timer_helper.h" />
     <ClInclude Include="fake_rand.h" />

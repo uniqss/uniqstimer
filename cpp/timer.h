@@ -3,8 +3,7 @@
 #include <unordered_map>
 #include <stdint.h>
 
-#include "timer_def.h"
-
+#define TimerIdType int64_t
 #define TimerMsType int64_t
 
 #define TIMER_BITS_PER_WHEEL 10
@@ -25,7 +24,7 @@ class TimerNode {
 
 class TimerManager {
    public:
-    TimerManager();
+    TimerManager(TimerMsType qwTimerMsCount = 1);
     ~TimerManager();
 
     // qwDueTime: first timeout   qwPeriod: then periodic timeout.(0: one shot timer)
@@ -35,6 +34,7 @@ class TimerManager {
 
    public:
     TimerMsType qwCurrentTimeMS_;  // current time ms
+    const TimerMsType qwTickOneSlotMS_;
     std::unordered_map<TimerIdType, TimerNode*> mapTimers_;
     TimerNode* arrListTimerHead_[TIMER_WHEEL_COUNT][TIMER_SLOT_COUNT_PER_WHEEL];
     TimerNode* arrListTimerTail_[TIMER_WHEEL_COUNT][TIMER_SLOT_COUNT_PER_WHEEL];

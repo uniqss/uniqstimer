@@ -62,7 +62,7 @@ static void CascadeTimer(TimerManager* pTimerManager, TimerMsType wheelIdx, Time
 void TimerManager::Run() {
     TimerMsType idxExecutingSlotIdx = 0, idxNextWheelSlotIdx = 0;
 
-    auto currTimeMS = UTimerGetCurrentTimeMS();
+    auto currTimeMS = UTimerGetCurrentTimeMS() / qwTickOneSlotMS_;
     TimerIdType timerId = 0;
     TimerNode* pTimer = nullptr;
     TimerNode* pNext = nullptr;
@@ -100,7 +100,7 @@ void TimerManager::Run() {
     }
 }
 
-TimerManager::TimerManager() {
+TimerManager::TimerManager(TimerMsType qwTickOneSlotMS) : qwTickOneSlotMS_(qwTickOneSlotMS) {
     for (auto wheelIdx = 0; wheelIdx < TIMER_WHEEL_COUNT; ++wheelIdx) {
         for (auto slotIdx = 0; slotIdx < TIMER_SLOT_COUNT_PER_WHEEL; ++slotIdx) {
             this->arrListTimerHead_[wheelIdx][slotIdx] = nullptr;
@@ -108,7 +108,7 @@ TimerManager::TimerManager() {
         }
     }
 
-    this->qwCurrentTimeMS_ = UTimerGetCurrentTimeMS();
+    this->qwCurrentTimeMS_ = UTimerGetCurrentTimeMS() / qwTickOneSlotMS_;
 }
 
 TimerManager::~TimerManager() {
@@ -149,6 +149,9 @@ bool TimerManager::CreateTimer(TimerIdType timerId, void (*timerFn)(TimerIdType,
         OnTimerError("CreateTimer AllocObj failed.");
         return false;
     }
+
+    qwDueTime /= qwTickOneSlotMS_;
+    qwPeriod /= qwTickOneSlotMS_;
 
     pTimer->qwPeriod = qwPeriod;
     pTimer->timerFn = timerFn;
