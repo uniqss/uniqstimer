@@ -12,9 +12,8 @@
 #define TIMER_SLOT_COUNT_PER_WHEEL 1 << TIMER_BITS_PER_WHEEL
 #define TIMER_MASK ((1 << TIMER_BITS_PER_WHEEL) - 1)
 
-class TimerNode {
-   public:
-    TimerNode* pNext_;
+struct UTimerNode {
+    UTimerNode* pNext_;
     TimerIdType qwTimerId_;
     TimerMsType qwExpires_;  //
     TimerMsType qwPeriod_;
@@ -25,11 +24,11 @@ class TimerNode {
 
 #include "timer_helper.h"
 
-template <class NodeAllocator = TimerNodeAllocator>
+template <class NodeAllocator = UTimerNodeAllocator>
 class TimerManager {
     NodeAllocator allocator_;
 
-    void AddTimer(TimerNode* pTimer) {
+    void AddTimer(UTimerNode* pTimer) {
         TimerMsType wheelIdx = 0;
         TimerMsType slotIdx = 0;
 
@@ -48,7 +47,7 @@ class TimerManager {
             wheelIdx = 0;
             slotIdx = this->qwCurrentTimeMS_ & TIMER_MASK;
         } else {
-            OnTimerError("AddTimer this should not happen");
+            UTimerOnError("AddTimer this should not happen");
             return;
         }
 
@@ -64,8 +63,8 @@ class TimerManager {
     }
 
     void CascadeTimer(TimerMsType wheelIdx, TimerMsType slotIdx) {
-        TimerNode* pTimer = arrListTimerHead_[wheelIdx][slotIdx];
-        TimerNode* pNext = nullptr;
+        UTimerNode* pTimer = arrListTimerHead_[wheelIdx][slotIdx];
+        UTimerNode* pNext = nullptr;
         for (; pTimer != nullptr; pTimer = pNext) {
             pNext = pTimer->pNext_;
 
@@ -91,8 +90,8 @@ class TimerManager {
         this->qwCurrentTimeMS_ = UTimerGetCurrentTimeMS() / qwTickOneSlotMS_;
     }
     ~TimerManager() {
-        TimerNode* pTimer = nullptr;
-        TimerNode* pNext = nullptr;
+        UTimerNode* pTimer = nullptr;
+        UTimerNode* pNext = nullptr;
         for (auto wheelIdx = 0; wheelIdx < TIMER_WHEEL_COUNT; ++wheelIdx) {
             for (auto slotIdx = 0; slotIdx < TIMER_SLOT_COUNT_PER_WHEEL; ++slotIdx) {
                 pTimer = this->arrListTimerHead_[wheelIdx][slotIdx];
@@ -124,9 +123,9 @@ class TimerManager {
             return false;
         }
 
-        TimerNode* pTimer = allocator_.AllocObj();
+        UTimerNode* pTimer = allocator_.AllocObj();
         if (pTimer == nullptr) {
-            OnTimerError("CreateTimer AllocObj failed.");
+            UTimerOnError("CreateTimer AllocObj failed.");
             return false;
         }
 
@@ -153,7 +152,7 @@ class TimerManager {
             return false;
         }
 
-        TimerNode* pTimer = it->second;
+        UTimerNode* pTimer = it->second;
         if (!pTimer->bRunning_) {
             return false;
         }
@@ -174,9 +173,9 @@ class TimerManager {
    public:
     TimerMsType qwCurrentTimeMS_;  // current time ms
     const TimerMsType qwTickOneSlotMS_;
-    std::unordered_map<TimerIdType, TimerNode*> mapTimers_;
-    TimerNode* arrListTimerHead_[TIMER_WHEEL_COUNT][TIMER_SLOT_COUNT_PER_WHEEL];
-    TimerNode* arrListTimerTail_[TIMER_WHEEL_COUNT][TIMER_SLOT_COUNT_PER_WHEEL];
+    std::unordered_map<TimerIdType, UTimerNode*> mapTimers_;
+    UTimerNode* arrListTimerHead_[TIMER_WHEEL_COUNT][TIMER_SLOT_COUNT_PER_WHEEL];
+    UTimerNode* arrListTimerTail_[TIMER_WHEEL_COUNT][TIMER_SLOT_COUNT_PER_WHEEL];
 
    public:
     void Run() {
@@ -184,8 +183,8 @@ class TimerManager {
 
         auto currTimeMS = UTimerGetCurrentTimeMS() / qwTickOneSlotMS_;
         TimerIdType timerId = 0;
-        TimerNode* pTimer = nullptr;
-        TimerNode* pNext = nullptr;
+        UTimerNode* pTimer = nullptr;
+        UTimerNode* pNext = nullptr;
         while (currTimeMS >= this->qwCurrentTimeMS_) {
             idxExecutingSlotIdx = this->qwCurrentTimeMS_ & TIMER_MASK;
 

@@ -55,13 +55,18 @@ class TestRandTimerInfo {
 
 std::vector<TestRandTimerInfo> arrTestRandTimerInfos;
 
+
+#if defined(WIN32) || defined(_WIN32) || defined(WINDOWS)
 #define GPERFTOOLS_PROFIE 0
+#else 
+#define GPERFTOOLS_PROFIE 1
+#endif
 #if GPERFTOOLS_PROFIE
 #include <gperftools/profiler.h>
 #endif
 int main(int argc, const char** argv) {
 #if GPERFTOOLS_PROFIE
-// ProfilerStart("uniqstimer.prof");
+    ProfilerStart("uniqstimer.prof");
 #endif
     arrTestRandTimerInfos.resize(timerIdRandCount);
     auto currMS = UTimerGetCurrentTimeMS();

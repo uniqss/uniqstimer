@@ -5,10 +5,10 @@
 #include <time.h>
 #include <stdexcept>
 
-TimerNodeAllocator::TimerNodeAllocator()
+UTimerNodeAllocator::UTimerNodeAllocator()
     : TimerAllocCalled_(0), TimerFreeCalled_(0), pFreeTimerHeadMem_(nullptr), TimerFreeCount_(0), UNIQS_TIMER_CACHE_MAX(4096), UNIQS_TIMER_CACHE_DELETE(2048) {}
-TimerNodeAllocator::~TimerNodeAllocator() {
-    TimerNode* tmp = nullptr;
+UTimerNodeAllocator::~UTimerNodeAllocator() {
+    UTimerNode* tmp = nullptr;
     while (pFreeTimerHeadMem_ != nullptr) {
         tmp = pFreeTimerHeadMem_;
         pFreeTimerHeadMem_ = pFreeTimerHeadMem_->pNext_;
@@ -16,20 +16,20 @@ TimerNodeAllocator::~TimerNodeAllocator() {
     }
 }
 
-TimerNode* TimerNodeAllocator::AllocObj() {
+UTimerNode* UTimerNodeAllocator::AllocObj() {
     ++TimerAllocCalled_;
 
     if (pFreeTimerHeadMem_ != nullptr) {
-        TimerFreeCount_--;
-        TimerNode* pTimer = pFreeTimerHeadMem_;
+        --TimerFreeCount_;
+        UTimerNode* pTimer = pFreeTimerHeadMem_;
         pFreeTimerHeadMem_ = pTimer->pNext_;
         pTimer->pNext_ = nullptr;
         return pTimer;
     }
-    auto ret = new TimerNode();
+    auto ret = new UTimerNode();
     return ret;
 }
-void TimerNodeAllocator::FreeObj(TimerNode* pTimer) {
+void UTimerNodeAllocator::FreeObj(UTimerNode* pTimer) {
     ++TimerFreeCalled_;
 
     ++TimerFreeCount_;
@@ -42,7 +42,7 @@ void TimerNodeAllocator::FreeObj(TimerNode* pTimer) {
     }
 
     if (TimerFreeCount_ > UNIQS_TIMER_CACHE_MAX) {
-        TimerNode* pDelete = pFreeTimerHeadMem_;
+        UTimerNode* pDelete = pFreeTimerHeadMem_;
         for (int i = 0; i < UNIQS_TIMER_CACHE_DELETE; ++i) {
             pFreeTimerHeadMem_ = pDelete->pNext_;
 
@@ -71,7 +71,7 @@ TimerMsType UTimerGetCurrentTimeMS(void) {
     return (TimerMsType)duration_in_ms.count();
 #endif
 #if 1
-    return GetTickCountMS();
+    return UTimerGetTickCountMS();
 #endif
 #else
 #if 1
@@ -113,7 +113,7 @@ int64_t UTimerGetCurrentTimeUS(void) {
 #endif
 }
 
-uint64_t GetTickCountMS() {
+uint64_t UTimerGetTickCountMS() {
 #if defined(WIN32) || defined(_WIN32) || defined(WINDOWS)
     return ::GetTickCount64();
 #else
@@ -124,9 +124,9 @@ uint64_t GetTickCountMS() {
 }
 
 #include <iostream>
-void OnTimerError(const std::string& err) {
+void UTimerOnError(const std::string& err) {
 #if 0
-    throw std::logic_error("OnTimerError" + err);
+    throw std::logic_error("UTimerOnError" + err);
 #else
     std::cout << err << std::endl;
 #endif
