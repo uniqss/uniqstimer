@@ -105,6 +105,11 @@ int64_t UTimerGetCurrentTimeUS(void) {
     gettimeofday(&tv, NULL);
     return tv.tv_sec * 1000000 + tv.tv_usec;
 #endif
+#if 1
+    struct timespec ts = {0};
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    return (ts.tv_sec * 1000000 + ts.tv_nsec / 1000);
+#endif
 #if 0
     auto time_now = std::chrono::system_clock::now();
     auto duration_in_ms = std::chrono::duration_cast<std::chrono::microseconds>(time_now.time_since_epoch());

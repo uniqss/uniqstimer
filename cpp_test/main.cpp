@@ -18,7 +18,7 @@ std::unique_ptr<TimerManager<>> pMgrIII;
 bool bWorking = true;
 bool bTerminateOk = false;
 int RunExceed1MSCount = 0;
-TimerMsType RunTotalUS = 0;
+TimerMsType RunTotalTime = 0;
 TimerMsType RunCount = 0;
 TimerMsType RunAverageUS = 0;
 TimerMsType OnTimerTotalUS = 0;
@@ -58,7 +58,7 @@ std::vector<TestRandTimerInfo> arrTestRandTimerInfos;
 
 #if defined(WIN32) || defined(_WIN32) || defined(WINDOWS)
 #define GPERFTOOLS_PROFIE 0
-#else 
+#else
 #define GPERFTOOLS_PROFIE 1
 #endif
 #if GPERFTOOLS_PROFIE
@@ -74,14 +74,17 @@ int main(int argc, const char** argv) {
     auto s = currMS / 1000;
     printf("main start. s:%llu ms:%llu \n", s, ms);
 
-    pMgr = std::unique_ptr<TimerManager<>>(new TimerManager<>());
-    pMgrIII = std::unique_ptr<TimerManager<>>(new TimerManager<>(100));
-
-#if 1
-    std::thread t(LogicThread);
-#else
-    std::thread t(LogicThreadIII);
-#endif
+    int64_t timerTickMs = 1;
+    if (argc >= 2) {
+        timerTickMs = atoll(argv[1]);
+        if (timerTickMs <= 0 || timerTickMs >= 1000) {
+            printf("timerTickMs[%lld] not valid, using default 1ms\n", timerTickMs);
+            timerTickMs = 1;
+        }
+    }
+    printf("timerTickMs:%lld \n", timerTickMs);
+    pMgr = std::unique_ptr<TimerManager<>>(new TimerManager<>(timerTickMs));
+    std::thread t([&]() { LogicThread(1000000, timerTickMs * 1000, 0, 1000); });
     t.detach();
 
     std::string input = "";
@@ -105,7 +108,7 @@ int main(int argc, const char** argv) {
     }
 
     while (!bTerminateOk) {
-        std::this_thread::sleep_for(std::chrono::microseconds(500));
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
 
 

@@ -17,7 +17,7 @@ extern std::unique_ptr<TimerManager<>> pMgrIII;
 extern bool bWorking;
 extern bool bTerminateOk;
 extern int RunExceed1MSCount;
-extern TimerMsType RunTotalUS;
+extern TimerMsType RunTotalTime;
 extern TimerMsType RunCount;
 extern TimerMsType RunAverageUS;
 extern TimerMsType OnTimerTotalUS;
@@ -26,7 +26,5 @@ extern TimerMsType OnTimerCountSinceLastPrint;
 extern TimerMsType OnTimerAverageUS;
 extern uint64_t FrameOnTimerCalled;
 
-void OnTimerIIIPressureTest(TimerIdType timerId, void* pParam);
 void OnTimerPressureTest(TimerIdType timerId, void* pParam);
-void LogicThread();
-void LogicThreadIII();
+void LogicThread(TimerIdType timerCount, int64_t tickMicroSeconds, int64_t usleepOnRun, int64_t usleepOnNotRun);

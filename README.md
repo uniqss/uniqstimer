@@ -15,3 +15,20 @@ index | language | implemention
 I. | cpp | just copy all files in directory cpp into your project
 II. | go | import "github.com/uniqss/uniqstimer"
 III. | js | just copy all files in directory js into your project
+
+## cpp test:
+```
+cd cpp_test
+sh b.sh
+./a.out
+```
+if you don't have gperftools, remove [-lprofiler -ltcmalloc] in b.sh
+
+test result:
+
+timerTickMs | %CPU | average(microseconds) | %cost cpu percent
+------ | ------ | ------ | ------
+1ms | 9 | 90 | 90/1000
+10ms | 5 | 450 | 450/10000
+20ms | 4 | 750 | 750/20000
+50ms | 3 | 1630 | 1630/50000
