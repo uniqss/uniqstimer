@@ -58,15 +58,21 @@ void TimerNodeAllocator::FreeObj(TimerNode* pTimer) {
 #include <time.h>
 #if defined(WIN32) || defined(_WIN32) || defined(WINDOWS)
 #include <chrono>
+#include <Windows.h>
 #else
 #include <sys/time.h>
 #endif
 
 TimerMsType UTimerGetCurrentTimeMS(void) {
 #if defined(WIN32) || defined(_WIN32) || defined(WINDOWS)
+#if 0
     auto time_now = std::chrono::system_clock::now();
     auto duration_in_ms = std::chrono::duration_cast<std::chrono::milliseconds>(time_now.time_since_epoch());
     return (TimerMsType)duration_in_ms.count();
+#endif
+#if 1
+    return GetTickCountMS();
+#endif
 #else
 #if 1
     struct timeval tv;
@@ -107,9 +113,9 @@ int64_t UTimerGetCurrentTimeUS(void) {
 #endif
 }
 
-uint32_t GetTickCount32MS() {
-#ifdef WIN32
-    return ::GetTickCount();
+uint64_t GetTickCountMS() {
+#if defined(WIN32) || defined(_WIN32) || defined(WINDOWS)
+    return ::GetTickCount64();
 #else
     struct timespec ts = {0};
     clock_gettime(CLOCK_MONOTONIC, &ts);
