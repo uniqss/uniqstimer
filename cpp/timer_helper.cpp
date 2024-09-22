@@ -6,52 +6,52 @@
 #include <stdexcept>
 
 UTimerNodeAllocator::UTimerNodeAllocator()
-    : TimerAllocCalled_(0), TimerFreeCalled_(0), pFreeTimerHeadMem_(nullptr), TimerFreeCount_(0), UNIQS_TIMER_CACHE_MAX(4096), UNIQS_TIMER_CACHE_DELETE(2048) {}
+    : alloc_called_(0), free_called_(0), free_timer_head_(nullptr), free_count_(0), UNIQS_TIMER_CACHE_MAX(4096), UNIQS_TIMER_CACHE_DELETE(2048) {}
 UTimerNodeAllocator::~UTimerNodeAllocator() {
     UTimerNode* tmp = nullptr;
-    while (pFreeTimerHeadMem_ != nullptr) {
-        tmp = pFreeTimerHeadMem_;
-        pFreeTimerHeadMem_ = pFreeTimerHeadMem_->pNext_;
+    while (free_timer_head_ != nullptr) {
+        tmp = free_timer_head_;
+        free_timer_head_ = free_timer_head_->next_;
         delete (tmp);
     }
 }
 
 UTimerNode* UTimerNodeAllocator::AllocObj() {
-    ++TimerAllocCalled_;
+    ++alloc_called_;
 
-    if (pFreeTimerHeadMem_ != nullptr) {
-        --TimerFreeCount_;
-        UTimerNode* pTimer = pFreeTimerHeadMem_;
-        pFreeTimerHeadMem_ = pTimer->pNext_;
-        pTimer->pNext_ = nullptr;
-        return pTimer;
+    if (free_timer_head_ != nullptr) {
+        --free_count_;
+        UTimerNode* t = free_timer_head_;
+        free_timer_head_ = t->next_;
+        t->next_ = nullptr;
+        return t;
     }
     auto ret = new UTimerNode();
     return ret;
 }
-void UTimerNodeAllocator::FreeObj(UTimerNode* pTimer) {
-    ++TimerFreeCalled_;
+void UTimerNodeAllocator::FreeObj(UTimerNode* timer) {
+    ++free_called_;
 
-    ++TimerFreeCount_;
-    if (pFreeTimerHeadMem_ == nullptr) {
-        pFreeTimerHeadMem_ = pTimer;
-        pFreeTimerHeadMem_->pNext_ = nullptr;
+    ++free_count_;
+    if (free_timer_head_ == nullptr) {
+        free_timer_head_ = timer;
+        free_timer_head_->next_ = nullptr;
     } else {
-        pTimer->pNext_ = pFreeTimerHeadMem_;
-        pFreeTimerHeadMem_ = pTimer;
+        timer->next_ = free_timer_head_;
+        free_timer_head_ = timer;
     }
 
-    if (TimerFreeCount_ > UNIQS_TIMER_CACHE_MAX) {
-        UTimerNode* pDelete = pFreeTimerHeadMem_;
+    if (free_count_ > UNIQS_TIMER_CACHE_MAX) {
+        UTimerNode* pDelete = free_timer_head_;
         for (int i = 0; i < UNIQS_TIMER_CACHE_DELETE; ++i) {
-            pFreeTimerHeadMem_ = pDelete->pNext_;
+            free_timer_head_ = pDelete->next_;
 
             // free memory
             delete pDelete;
 
-            pDelete = pFreeTimerHeadMem_;
+            pDelete = free_timer_head_;
         }
-        TimerFreeCount_ -= UNIQS_TIMER_CACHE_DELETE;
+        free_count_ -= UNIQS_TIMER_CACHE_DELETE;
     }
 }
 

@@ -11,11 +11,11 @@ const TimerIdType timerIdMotherStop = timerIdMotherStart + timerIdMotherCount;
 const TimerIdType timerIdRandStart = 10000000;
 const TimerIdType timerIdRandCount = 100000;
 
-extern std::unique_ptr<TimerManager<>> pMgr;
-extern std::unique_ptr<TimerManager<>> pMgrIII;
+extern std::unique_ptr<TimerManager<>> gMgr;
+extern std::unique_ptr<TimerManager<>> gMgrIII;
 
-extern bool bWorking;
-extern bool bTerminateOk;
+extern bool gWorking;
+extern bool gTerminateOk;
 extern int RunExceed1MSCount;
 extern TimerMsType RunTotalTime;
 extern TimerMsType RunCount;

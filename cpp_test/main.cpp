@@ -13,10 +13,10 @@
 
 #include "timer_helper.h"
 
-std::unique_ptr<TimerManager<>> pMgr;
-std::unique_ptr<TimerManager<>> pMgrIII;
-bool bWorking = true;
-bool bTerminateOk = false;
+std::unique_ptr<TimerManager<>> gMgr;
+std::unique_ptr<TimerManager<>> gMgrIII;
+bool gWorking = true;
+bool gTerminateOk = false;
 int RunExceed1MSCount = 0;
 TimerMsType RunTotalTime = 0;
 TimerMsType RunCount = 0;
@@ -57,33 +57,35 @@ std::vector<TestRandTimerInfo> arrTestRandTimerInfos;
 
 
 #if defined(WIN32) || defined(_WIN32) || defined(WINDOWS)
-#define GPERFTOOLS_PROFIE 0
-#else
-#define GPERFTOOLS_PROFIE 1
+#ifdef GPERFTOOLS_PROFIE
+#undef GPERFTOOLS_PROFIE
 #endif
-#if GPERFTOOLS_PROFIE
+#else
+// #define GPERFTOOLS_PROFIE
+#endif
+#ifdef GPERFTOOLS_PROFIE
 #include <gperftools/profiler.h>
 #endif
 int main(int argc, const char** argv) {
-#if GPERFTOOLS_PROFIE
+#ifdef GPERFTOOLS_PROFIE
     ProfilerStart("uniqstimer.prof");
 #endif
     arrTestRandTimerInfos.resize(timerIdRandCount);
     auto currMS = UTimerGetCurrentTimeMS();
     auto ms = currMS % 1000;
     auto s = currMS / 1000;
-    printf("main start. s:%llu ms:%llu \n", s, ms);
+    printf("main start. s:%lu ms:%lu \n", s, ms);
 
     int64_t timerTickMs = 1;
     if (argc >= 2) {
         timerTickMs = atoll(argv[1]);
         if (timerTickMs <= 0 || timerTickMs >= 1000) {
-            printf("timerTickMs[%lld] not valid, using default 1ms\n", timerTickMs);
+            printf("timerTickMs[%ld] not valid, using default 1ms\n", timerTickMs);
             timerTickMs = 1;
         }
     }
-    printf("timerTickMs:%lld \n", timerTickMs);
-    pMgr = std::unique_ptr<TimerManager<>>(new TimerManager<>(timerTickMs));
+    printf("timerTickMs:%ld \n", timerTickMs);
+    gMgr = std::unique_ptr<TimerManager<>>(new TimerManager<>(timerTickMs));
     std::thread t([&]() { LogicThread(1000000, timerTickMs * 1000, 0, 1000); });
     t.detach();
 
@@ -92,14 +94,15 @@ int main(int argc, const char** argv) {
     while (true) {
         std::cin >> input;
         if (input == "exit" || input == "e") {
-            bWorking = false;
+            gWorking = false;
             break;
         }
         if (input == "p" || input == "print") {
 #if 1
             auto currPrintMS = UTimerGetCurrentTimeMS();
-            printf("FrameOnTimerCalled:%llu RunExceed1MSCount:%d OnTimerCount:%llu OnTimerCountSinceLastPrint:%llu OnTimer/ms:%llu\n", FrameOnTimerCalled, RunExceed1MSCount,
-                   OnTimerCount, OnTimerCount - OnTimerCountSinceLastPrint, (OnTimerCount - OnTimerCountSinceLastPrint) / (currPrintMS - lastPrintMS));
+            std::cout << " FrameOnTimerCalled:" << FrameOnTimerCalled << " RunExceed1MSCount:" << RunExceed1MSCount;
+            std::cout << " OnTimerCount:" << OnTimerCount << " OnTimerCountSinceLastPrint:" << OnTimerCount - OnTimerCountSinceLastPrint;
+            std::cout << " OnTimer/ms:" << (OnTimerCount - OnTimerCountSinceLastPrint) / (currPrintMS - lastPrintMS) << std::endl;
             OnTimerCountSinceLastPrint = OnTimerCount;
             lastPrintMS = currPrintMS;
 #endif
@@ -107,12 +110,12 @@ int main(int argc, const char** argv) {
         }
     }
 
-    while (!bTerminateOk) {
+    while (!gTerminateOk) {
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
 
 
-#if GPERFTOOLS_PROFIE
+#ifdef GPERFTOOLS_PROFIE
     ProfilerStop();
 #endif
 

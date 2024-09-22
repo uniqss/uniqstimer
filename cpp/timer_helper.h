@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <stdint.h>
 
 struct UTimerNode;
 class UTimerNodeAllocator {
@@ -10,10 +11,10 @@ class UTimerNodeAllocator {
     UTimerNode* AllocObj();
     void FreeObj(UTimerNode* pTimer);
 
-    int TimerAllocCalled_;
-    int TimerFreeCalled_;
-    UTimerNode* pFreeTimerHeadMem_;
-    int TimerFreeCount_;
+    int alloc_called_;
+    int free_called_;
+    UTimerNode* free_timer_head_;
+    int free_count_;
     const int UNIQS_TIMER_CACHE_MAX;
     const int UNIQS_TIMER_CACHE_DELETE;
 };

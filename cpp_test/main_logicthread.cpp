@@ -25,7 +25,7 @@ void LogicThread(TimerIdType timerCount, int64_t tickMicroSeconds, int64_t uslee
     FakeRandInit();
 
     for (TimerIdType i = 1; i <= timerCount; ++i) {
-        pMgr->CreateTimer(i, OnTimerPressureTest, (void*)"timer LV I timer test pressure test", (i % 1000) + 1, 1000);
+        gMgr->CreateTimer(i, OnTimerPressureTest, (void*)"timer LV I timer test pressure test", (i % 1000) + 1, 1000);
     }
 
     int64_t lastUS = UTimerGetCurrentTimeUS();
@@ -34,12 +34,12 @@ void LogicThread(TimerIdType timerCount, int64_t tickMicroSeconds, int64_t uslee
     int64_t tmpDiffSum = 0;
     int lessCount = 0;
     int exceedCount = 0;
-    while (bWorking) {
+    while (gWorking) {
         FrameOnTimerCalled = 0;
 
         currUS = UTimerGetCurrentTimeUS();
         if (currUS > lastUS) {
-            pMgr->Run();
+            gMgr->Run();
             ++RunCount;
             lastUS += tickMicroSeconds;
 
@@ -53,7 +53,7 @@ void LogicThread(TimerIdType timerCount, int64_t tickMicroSeconds, int64_t uslee
                 ++lessCount;
             }
             if ((lessCount + exceedCount) * tickMicroSeconds >= 1000000) {
-                printf("%d|%lld|%lld ", exceedCount, tmpDiffSum, RunTotalTime / RunCount);
+                printf("%d|%ld|%ld ", exceedCount, tmpDiffSum, RunTotalTime / RunCount);
                 fflush(stdout);
 
                 lessCount = 0;
@@ -65,5 +65,5 @@ void LogicThread(TimerIdType timerCount, int64_t tickMicroSeconds, int64_t uslee
             if (usleepOnNotRun > 0) usleep(usleepOnNotRun);
         }
     }
-    bTerminateOk = true;
+    gTerminateOk = true;
 }
