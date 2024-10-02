@@ -27,30 +27,36 @@ struct UTimerPtrList {
     }
 };
 
+struct UTimerNode;
+typedef void (*UTimerFn)(TimerIdType, UTimerNode*, void*);
 struct UTimerNode {
     UTimerNode* next_;
     TimerIdType timerid_;
     TimerMsType expires_;  //
     TimerMsType period_;
-    void (*timerFn)(TimerIdType, void*);
+    UTimerFn timerFn;
     void* param_;
     bool running_;
+    void clear() { timerid_ = 0, expires_ = 0, period_ = 0, timerFn = nullptr, param_ = 0, running_ = 0; }
 };
 
 #include "timer_helper.h"
 
+typedef TimerMsType (*TimerMgrGetMsFn)();
 // not thread safe, designed to be used in one thread
 template <class NodeAllocator = UTimerNodeAllocator>
 class TimerManager {
    public:
-    TimerManager(TimerMsType tickOneSlotMS = 1) : tick_one_slot_ms_(tickOneSlotMS) {
+    TimerManager(TimerMgrGetMsFn tmGetMsFn = UTimerGetCurrentTimeMS, TimerMsType tickOneSlotMS = 1)
+        : tick_one_slot_ms_(tickOneSlotMS) {
         for (auto wheelIdx = 0; wheelIdx < TIMER_WHEEL_COUNT; ++wheelIdx) {
             for (auto slotIdx = 0; slotIdx < TIMER_SLOT_COUNT_PER_WHEEL; ++slotIdx) {
                 list_timer_[wheelIdx][slotIdx].clear();
             }
         }
 
-        this->current_time_ms_ = UTimerGetCurrentTimeMS() / tick_one_slot_ms_;
+        get_curr_ms_fn_ = tmGetMsFn;
+        run_time_ms_ = get_curr_ms_fn_() / tickOneSlotMS;
     }
     ~TimerManager() {
         UTimerNode* curr = nullptr;
@@ -60,7 +66,7 @@ class TimerManager {
                 curr = list_timer_[wheelIdx][slotIdx].head_;
                 for (; curr != nullptr; curr = next) {
                     next = curr->next_;
-
+                    curr->clear();
                     allocator_.FreeObj(curr);
                 }
                 list_timer_[wheelIdx][slotIdx].clear();
@@ -68,88 +74,114 @@ class TimerManager {
         }
     }
 
+    void Init(TimerMgrGetMsFn tmGetMsFn, TimerMsType tickOneSlotMS = 1) {
+        get_curr_ms_fn_ = tmGetMsFn;
+        tick_one_slot_ms_ = tickOneSlotMS;
+
+        run_time_ms_ = get_curr_ms_fn_() / tickOneSlotMS;
+    }
+
     // dueTime: first timeout. period: then periodic timeout.(0: one shot timer)    not thread safe.
-    bool CreateTimer(TimerIdType timerId, void (*timerFn)(TimerIdType, void*), void* param, TimerMsType dueTime, TimerMsType period) {
+    bool CreateTimer(TimerIdType timerId, UTimerFn timerFn, void* param, TimerMsType dueTime, TimerMsType period) {
         if (NULL == timerFn) return false;
 
-        // both 0, meaningless
-        if (dueTime == 0 && period == 0) {
+        auto it = timers_.find(timerId);
+        if (it != timers_.end()) {
             return false;
         }
 
-        // if repeat, and duetime = 0, set duetime to period
-        if (dueTime == 0) {
+        UTimerNode* curr = CreateTimerMem(timerFn, param, dueTime, period);
+        if (curr == nullptr) {
             return false;
         }
+        curr->timerid_ = timerId;
+        timers_[timerId] = curr;
 
-        auto it = this->timers_.find(timerId);
-        if (it != this->timers_.end()) {
-            return false;
-        }
+        return true;
+    }
+
+    // manage mem directly, no timerId. you MUST set the pointer you saved to null in your timerFn in timer's last
+    // trigger
+    UTimerNode* CreateTimerMem(UTimerFn timerFn, void* param, TimerMsType dueTime, TimerMsType period) {
+        if (period < 0) period = 0;
+        if (dueTime == 0) dueTime = tick_one_slot_ms_;
 
         UTimerNode* curr = allocator_.AllocObj();
         if (curr == nullptr) {
             UTimerOnError("CreateTimer AllocObj failed.");
-            return false;
+            return nullptr;
         }
 
+        if (dueTime > 0 && dueTime < tick_one_slot_ms_) dueTime = tick_one_slot_ms_;
+        if (period > 0 && period < tick_one_slot_ms_) period = tick_one_slot_ms_;
         dueTime /= tick_one_slot_ms_;
         period /= tick_one_slot_ms_;
 
         curr->period_ = period;
         curr->timerFn = timerFn;
         curr->param_ = param;
-        curr->timerid_ = timerId;
+        curr->timerid_ = 0;
 
         curr->running_ = true;
 
-        curr->expires_ = this->current_time_ms_ + dueTime;
+        curr->expires_ = run_time_ms_ + dueTime;
         AddTimer(curr);
-        this->timers_[timerId] = curr;
 
-        return true;
+        return curr;
     }
 
     // not thread safe.
     bool KillTimer(TimerIdType timerId) {
-        auto it = this->timers_.find(timerId);
-        if (it == this->timers_.end()) {
+        auto it = timers_.find(timerId);
+        if (it == timers_.end()) {
             return false;
         }
 
         UTimerNode* curr = it->second;
-        if (!curr->running_) {
-            return false;
-        }
+        if (!KillTimerMem(curr)) return false;
 
-        curr->running_ = false;
-        this->timers_.erase(it);
+        timers_.erase(it);
+        return true;
+    }
 
+    // manage mem directly, no timerId
+    bool KillTimerMem(UTimerNode* timer) {
+        if (!timer->running_) return false;
+        timer->running_ = false;
         return true;
     }
 
     // not thread safe.
     void KillAllTimers() {
-        for (auto it = this->timers_.begin(); it != this->timers_.end(); ++it) {
+        for (auto it = timers_.begin(); it != timers_.end(); ++it) {
             it->second->running_ = false;
         }
-        this->timers_.clear();
+        timers_.clear();
+
+        for (int wheelIdx = 0; wheelIdx < TIMER_WHEEL_COUNT; ++wheelIdx) {
+            for (int slotIdx = 0; slotIdx < TIMER_SLOT_COUNT_PER_WHEEL; ++slotIdx) {
+                UTimerNode* curr = list_timer_[wheelIdx][slotIdx].head_;
+                for (; curr != nullptr; curr = curr->next_) {
+                    curr->running_ = false;
+                }
+            }
+        }
     }
 
     // should be called in one thread, not thread safe
-    void Run() {
+    void Run(int64_t currTimeMS = 0) {
         TimerMsType executingSlotIdx = 0, nextWheelSlotIdx = 0;
 
-        auto currTimeMS = UTimerGetCurrentTimeMS() / tick_one_slot_ms_;
+        if (currTimeMS == 0) currTimeMS = get_curr_ms_fn_() / tick_one_slot_ms_;
         TimerIdType timerId = 0;
         UTimerNode* curr = nullptr;
         UTimerNode* next = nullptr;
-        while (currTimeMS >= this->current_time_ms_) {
-            executingSlotIdx = this->current_time_ms_ & TIMER_MASK;
+        while (currTimeMS >= run_time_ms_) {
+            executingSlotIdx = run_time_ms_ & TIMER_MASK;
 
             nextWheelSlotIdx = executingSlotIdx;
             for (TimerMsType i = 0; i < TIMER_WHEEL_COUNT - 1 && nextWheelSlotIdx == 0; ++i) {
-                nextWheelSlotIdx = (this->current_time_ms_ >> ((i + 1) * TIMER_BITS_PER_WHEEL)) & TIMER_MASK;
+                nextWheelSlotIdx = (run_time_ms_ >> ((i + 1) * TIMER_BITS_PER_WHEEL)) & TIMER_MASK;
                 CascadeTimer(i + 1, nextWheelSlotIdx);
             }
 
@@ -159,15 +191,17 @@ class TimerManager {
 
                 timerId = curr->timerid_;
                 if (curr->running_) {
-                    curr->timerFn(curr->timerid_, curr->param_);
+                    curr->timerFn(curr->timerid_, curr, curr->param_);
                     if (curr->period_ != 0) {
-                        curr->expires_ = this->current_time_ms_ + curr->period_;
+                        curr->expires_ = run_time_ms_ + curr->period_;
                         AddTimer(curr);
                     } else {
+                        curr->clear();
                         allocator_.FreeObj(curr);
-                        this->timers_.erase(timerId);
+                        timers_.erase(timerId);
                     }
                 } else {
+                    curr->clear();
                     allocator_.FreeObj(curr);
                 }
 
@@ -175,7 +209,7 @@ class TimerManager {
             }
             list_timer_[0][executingSlotIdx].clear();
 
-            ++this->current_time_ms_;
+            ++run_time_ms_;
         }
     }
 
@@ -185,7 +219,7 @@ class TimerManager {
         TimerMsType slotIdx = 0;
 
         TimerMsType expires = curr->expires_;
-        TimerMsType dueTime = expires - this->current_time_ms_;
+        TimerMsType dueTime = expires - run_time_ms_;
 
         if (dueTime < TimerMsType(1) << (TIMER_BITS_PER_WHEEL * (TIMER_WHEEL_COUNT))) {
             for (TimerMsType i = 0; i < TIMER_WHEEL_COUNT; ++i) {
@@ -197,7 +231,7 @@ class TimerManager {
             }
         } else if (dueTime < 0) {
             wheelIdx = 0;
-            slotIdx = this->current_time_ms_ & TIMER_MASK;
+            slotIdx = run_time_ms_ & TIMER_MASK;
         } else {
             UTimerOnError("AddTimer this should not happen");
             return;
@@ -216,20 +250,20 @@ class TimerManager {
             if (curr->running_) {
                 AddTimer(curr);
             } else {
+                curr->clear();
                 allocator_.FreeObj(curr);
             }
         }
         list_timer_[wheelIdx][slotIdx].clear();
     }
 
-    TimerMsType current_time_ms_;  // current time ms
-    const TimerMsType tick_one_slot_ms_;
+    TimerMgrGetMsFn get_curr_ms_fn_;
+    TimerMsType run_time_ms_;  // current time ms
+    TimerMsType tick_one_slot_ms_;
 
     // not thread safe.
     std::unordered_map<TimerIdType, UTimerNode*> timers_;
 
-    UTimerNode* list_timer_head_[TIMER_WHEEL_COUNT][TIMER_SLOT_COUNT_PER_WHEEL];
-    UTimerNode* list_timer_tail_[TIMER_WHEEL_COUNT][TIMER_SLOT_COUNT_PER_WHEEL];
     UTimerPtrList<UTimerNode> list_timer_[TIMER_WHEEL_COUNT][TIMER_SLOT_COUNT_PER_WHEEL];
     NodeAllocator allocator_;
 };

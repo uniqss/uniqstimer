@@ -85,7 +85,7 @@ int main(int argc, const char** argv) {
         }
     }
     printf("timerTickMs:%ld \n", timerTickMs);
-    gMgr = std::unique_ptr<TimerManager<>>(new TimerManager<>(timerTickMs));
+    gMgr = std::unique_ptr<TimerManager<>>(new TimerManager<>(UTimerGetCurrentTimeMS, timerTickMs));
     std::thread t([&]() { LogicThread(1000000, timerTickMs * 1000, 0, 1000); });
     t.detach();
 
@@ -101,8 +101,10 @@ int main(int argc, const char** argv) {
 #if 1
             auto currPrintMS = UTimerGetCurrentTimeMS();
             std::cout << " FrameOnTimerCalled:" << FrameOnTimerCalled << " RunExceed1MSCount:" << RunExceed1MSCount;
-            std::cout << " OnTimerCount:" << OnTimerCount << " OnTimerCountSinceLastPrint:" << OnTimerCount - OnTimerCountSinceLastPrint;
-            std::cout << " OnTimer/ms:" << (OnTimerCount - OnTimerCountSinceLastPrint) / (currPrintMS - lastPrintMS) << std::endl;
+            std::cout << " OnTimerCount:" << OnTimerCount
+                      << " OnTimerCountSinceLastPrint:" << OnTimerCount - OnTimerCountSinceLastPrint;
+            std::cout << " OnTimer/ms:" << (OnTimerCount - OnTimerCountSinceLastPrint) / (currPrintMS - lastPrintMS)
+                      << std::endl;
             OnTimerCountSinceLastPrint = OnTimerCount;
             lastPrintMS = currPrintMS;
 #endif

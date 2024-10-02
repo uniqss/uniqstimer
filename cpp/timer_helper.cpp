@@ -6,7 +6,12 @@
 #include <stdexcept>
 
 UTimerNodeAllocator::UTimerNodeAllocator()
-    : alloc_called_(0), free_called_(0), free_timer_head_(nullptr), free_count_(0), UNIQS_TIMER_CACHE_MAX(4096), UNIQS_TIMER_CACHE_DELETE(2048) {}
+    : alloc_called_(0),
+      free_called_(0),
+      free_timer_head_(nullptr),
+      free_count_(0),
+      UNIQS_TIMER_CACHE_MAX(4096),
+      UNIQS_TIMER_CACHE_DELETE(2048) {}
 UTimerNodeAllocator::~UTimerNodeAllocator() {
     UTimerNode* tmp = nullptr;
     while (free_timer_head_ != nullptr) {

@@ -26,5 +26,5 @@ extern TimerMsType OnTimerCountSinceLastPrint;
 extern TimerMsType OnTimerAverageUS;
 extern uint64_t FrameOnTimerCalled;
 
-void OnTimerPressureTest(TimerIdType timerId, void* pParam);
+void OnTimerPressureTest(TimerIdType timerId, UTimerNode* timer, void* param);
 void LogicThread(TimerIdType timerCount, int64_t tickMicroSeconds, int64_t usleepOnRun, int64_t usleepOnNotRun);

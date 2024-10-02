@@ -2,7 +2,7 @@
 
 #include "timer_helper.h"
 
-void OnTimerPressureTest(TimerIdType timerId, void* pParam) {
+void OnTimerPressureTest(TimerIdType timerId, UTimerNode* timer, void* param) {
     // const char* pszStr = (const char*)pParam;
     ++FrameOnTimerCalled;
     ++OnTimerCount;

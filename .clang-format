@@ -2,7 +2,7 @@
 BasedOnStyle: Google
 AllowShortFunctionsOnASingleLine: Inline
 BreakBeforeBraces: Custom
-ColumnLimit: '173'
+ColumnLimit: '120'
 ConstructorInitializerIndentWidth: '4'
 ContinuationIndentWidth: '4'
 IndentWidth: '4'
